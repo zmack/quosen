@@ -14,10 +14,6 @@ javascripts = {
     'coffee/chosen.jquery.coffee'
     'coffee/lib/select-parser.coffee'
   ]
-  'chosen/chosen.proto.js': [
-    'coffee/chosen.proto.coffee'
-    'coffee/lib/select-parser.coffee'
-  ]
 }
 
 Array::unique = ->
