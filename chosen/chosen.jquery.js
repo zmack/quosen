@@ -30,7 +30,22 @@
   });
   Chosen = (function() {
     function Chosen(element) {
-      this.set_default_values();
+      this.keydown_checker = __bind(this.keydown_checker, this);
+      this.keyup_checker = __bind(this.keyup_checker, this);
+      this.choices_click = __bind(this.choices_click, this);
+      this.search_results_mouseout = __bind(this.search_results_mouseout, this);
+      this.search_results_mouseover = __bind(this.search_results_mouseover, this);
+      this.search_results_mouseup = __bind(this.search_results_mouseup, this);
+      this.test_active_click = __bind(this.test_active_click, this);
+      this.activate_field = __bind(this.activate_field, this);
+      this.close_field = __bind(this.close_field, this);
+      this.blur_test = __bind(this.blur_test, this);
+      this.input_blur = __bind(this.input_blur, this);
+      this.input_focus = __bind(this.input_focus, this);
+      this.mouse_leave = __bind(this.mouse_leave, this);
+      this.mouse_enter = __bind(this.mouse_enter, this);
+      this.select_changed = __bind(this.select_changed, this);
+      this.container_mousedown = __bind(this.container_mousedown, this);      this.set_default_values();
       this.form_field = element;
       this.$form_field = $(this.form_field);
       this.is_multiple = this.form_field.multiple;
@@ -110,47 +125,22 @@
       return this.set_tab_index();
     };
     Chosen.prototype.register_observers = function() {
-      this.container.mousedown(__bind(function(evt) {
-        return this.container_mousedown(evt);
-      }, this));
-      this.container.mouseenter(__bind(function(evt) {
-        return this.mouse_enter(evt);
-      }, this));
-      this.container.mouseleave(__bind(function(evt) {
-        return this.mouse_leave(evt);
-      }, this));
-      this.search_results.mouseup(__bind(function(evt) {
-        return this.search_results_mouseup(evt);
-      }, this));
-      this.search_results.mouseover(__bind(function(evt) {
-        return this.search_results_mouseover(evt);
-      }, this));
-      this.search_results.mouseout(__bind(function(evt) {
-        return this.search_results_mouseout(evt);
-      }, this));
-      this.$form_field.bind("liszt:updated", __bind(function(evt) {
-        return this.results_update_field(evt);
-      }, this));
-      this.search_field.blur(__bind(function(evt) {
-        return this.input_blur(evt);
-      }, this));
-      this.search_field.keyup(__bind(function(evt) {
-        return this.keyup_checker(evt);
-      }, this));
-      this.search_field.keydown(__bind(function(evt) {
-        return this.keydown_checker(evt);
-      }, this));
+      this.container.mousedown(this.container_mousedown);
+      this.container.mouseenter(this.mouse_enter);
+      this.container.mouseleave(this.mouse_leave);
+      this.search_results.mouseup(this.search_results_mouseup);
+      this.search_results.mouseover(this.search_results_mouseover);
+      this.search_results.mouseout(this.search_results_mouseout);
+      this.$form_field.bind("liszt:updated", this.results_update_field);
+      this.$form_field.change(this.select_changed);
+      this.search_field.blur(this.input_blur);
+      this.search_field.keyup(this.keyup_checker);
+      this.search_field.keydown(this.keydown_checker);
       if (this.is_multiple) {
-        this.search_choices.click(__bind(function(evt) {
-          return this.choices_click(evt);
-        }, this));
-        return this.search_field.focus(__bind(function(evt) {
-          return this.input_focus(evt);
-        }, this));
+        this.search_choices.click(this.choices_click);
+        return this.search_field.focus(this.input_focus);
       } else {
-        return this.selected_item.focus(__bind(function(evt) {
-          return this.activate_field(evt);
-        }, this));
+        return this.selected_item.focus(this.activate_field);
       }
     };
     Chosen.prototype.container_mousedown = function(evt) {
@@ -173,6 +163,7 @@
         return this.pending_destroy_click = false;
       }
     };
+    Chosen.prototype.select_changed = function(evt) {};
     Chosen.prototype.mouse_enter = function() {
       return this.mouse_on_container = true;
     };

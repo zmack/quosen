@@ -121,27 +121,28 @@ class Chosen
 
 
   register_observers: ->
-    @container.mousedown (evt) => this.container_mousedown(evt)
-    @container.mouseenter (evt) => this.mouse_enter(evt)
-    @container.mouseleave (evt) => this.mouse_leave(evt)
+    @container.mousedown this.container_mousedown
+    @container.mouseenter this.mouse_enter
+    @container.mouseleave this.mouse_leave
   
-    @search_results.mouseup (evt) => this.search_results_mouseup(evt)
-    @search_results.mouseover (evt) => this.search_results_mouseover(evt)
-    @search_results.mouseout (evt) => this.search_results_mouseout(evt)
+    @search_results.mouseup this.search_results_mouseup
+    @search_results.mouseover this.search_results_mouseover
+    @search_results.mouseout this.search_results_mouseout
 
-    @$form_field.bind "liszt:updated", (evt) => this.results_update_field(evt)
+    @$form_field.bind "liszt:updated", this.results_update_field
+    @$form_field.change this.select_changed
 
-    @search_field.blur (evt) => this.input_blur(evt)
-    @search_field.keyup (evt) => this.keyup_checker(evt)
-    @search_field.keydown (evt) => this.keydown_checker(evt)
+    @search_field.blur this.input_blur
+    @search_field.keyup this.keyup_checker
+    @search_field.keydown this.keydown_checker
 
     if @is_multiple
-      @search_choices.click (evt) => this.choices_click(evt)
-      @search_field.focus (evt) => this.input_focus(evt)
+      @search_choices.click this.choices_click
+      @search_field.focus this.input_focus
     else
-      @selected_item.focus (evt) => this.activate_field(evt)
+      @selected_item.focus this.activate_field
 
-  container_mousedown: (evt) ->
+  container_mousedown: (evt) =>
     if evt and evt.type is "mousedown"
       evt.stopPropagation()
     if not @pending_destroy_click
@@ -157,21 +158,23 @@ class Chosen
     else
       @pending_destroy_click = false
 
-  mouse_enter: -> @mouse_on_container = true
-  mouse_leave: -> @mouse_on_container = false
 
-  input_focus: (evt) ->
+  select_changed: (evt) =>
+  mouse_enter: => @mouse_on_container = true
+  mouse_leave: => @mouse_on_container = false
+
+  input_focus: (evt) =>
     setTimeout (=> this.container_mousedown()), 50 unless @active_field
   
-  input_blur: (evt) ->
+  input_blur: (evt) =>
     if not @mouse_on_container
       @active_field = false
       setTimeout (=> this.blur_test()), 100
 
-  blur_test: (evt) ->
+  blur_test: (evt) =>
     this.close_field() if not @active_field and @container.hasClass "chzn-container-active"
 
-  close_field: ->
+  close_field: =>
     $(document).unbind "click", @click_test_action
     
     if not @is_multiple
@@ -188,7 +191,7 @@ class Chosen
     this.show_search_field_default()
     this.search_field_scale()
 
-  activate_field: ->
+  activate_field: =>
     if not @is_multiple and not @active_field
       @search_field.attr "tabindex", (@selected_item.attr "tabindex")
       @selected_item.attr "tabindex", -1
@@ -200,7 +203,7 @@ class Chosen
     @search_field.focus()
 
 
-  test_active_click: (evt) ->
+  test_active_click: (evt) =>
     if $(evt.target).parents('#' + @container_id()).length
       @active_field = true
     else
@@ -329,21 +332,21 @@ class Chosen
       @search_field.val("")
       @search_field.removeClass "default"
 
-  search_results_mouseup: (evt) ->
+  search_results_mouseup: (evt) =>
     target = if $(evt.target).hasClass "active-result" then $(evt.target) else $(evt.target).parents(".active-result").first()
     if target.length
       @result_highlight = target
       this.result_select(evt)
 
-  search_results_mouseover: (evt) ->
+  search_results_mouseover: (evt) =>
     target = if $(evt.target).hasClass "active-result" then $(evt.target) else $(evt.target).parents(".active-result").first()
     this.result_do_highlight( target ) if target
 
-  search_results_mouseout: (evt) ->
+  search_results_mouseout: (evt) =>
     this.result_clear_highlight() if $(evt.target).hasClass "active-result" or $(evt.target).parents('.active-result').first()
 
 
-  choices_click: (evt) ->
+  choices_click: (evt) =>
     evt.preventDefault()
     if( @active_field and not($(evt.target).hasClass "search-choice" or $(evt.target).parents('.search-choice').first) and not @results_showing )
       this.results_show()
@@ -544,7 +547,7 @@ class Chosen
     @pending_backstroke.removeClass "search-choice-focus" if @pending_backstroke
     @pending_backstroke = null
 
-  keyup_checker: (evt) ->
+  keyup_checker: (evt) =>
     stroke = evt.which ? evt.keyCode
     this.search_field_scale()
 
@@ -565,7 +568,7 @@ class Chosen
       else this.results_search()
 
 
-  keydown_checker: (evt) ->
+  keydown_checker: (evt) =>
     stroke = evt.which ? evt.keyCode
     this.search_field_scale()
     
