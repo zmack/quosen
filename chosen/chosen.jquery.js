@@ -22,24 +22,33 @@
         return this;
       }
       return $(this).each(function(input_field) {
-        if (!($(this)).hasClass("chzn-done")) {
+        if (!$(this).hasClass("chzn-done")) {
           return new Chosen(this, data, options);
         }
       });
     }
   });
   Chosen = (function() {
-    function Chosen(elmn) {
+    function Chosen(element) {
       this.set_default_values();
-      this.form_field = elmn;
-      this.form_field_jq = $(this.form_field);
+      this.form_field = element;
+      this.$form_field = $(this.form_field);
       this.is_multiple = this.form_field.multiple;
-      this.is_rtl = this.form_field_jq.hasClass("chzn-rtl");
-      this.default_text_default = this.form_field.multiple ? "Select Some Options" : "Select an Option";
+      this.is_rtl = this.$form_field.hasClass("chzn-rtl");
       this.set_up_html();
       this.register_observers();
-      this.form_field_jq.addClass("chzn-done");
+      this.$form_field.addClass("chzn-done");
     }
+    Chosen.prototype.default_text = function() {
+      if (this.$form_field.data('placeholder')) {
+        return this.$form_field.data('placeholder');
+      }
+      if (this.form_field.multiple) {
+        return "Select Some Options";
+      } else {
+        return "Select an Option";
+      }
+    };
     Chosen.prototype.set_default_values = function() {
       this.click_test_action = __bind(function(evt) {
         return this.test_active_click(evt);
@@ -51,24 +60,29 @@
       this.result_single_selected = null;
       return this.choices = 0;
     };
-    Chosen.prototype.set_up_html = function() {
-      var container_div, dd_top, dd_width, sf_width;
-      this.container_id = this.form_field.id.length ? this.form_field.id.replace(/(:|\.)/g, '_') : this.generate_field_id();
-      this.container_id += "_chzn";
-      this.f_width = this.form_field_jq.width();
-      this.default_text = this.form_field_jq.data('placeholder') ? this.form_field_jq.data('placeholder') : this.default_text_default;
+    Chosen.prototype.container_id = function() {
+      var container_id;
+      container_id = this.form_field.id.length ? this.form_field.id.replace(/(:|\.)/g, '_') : this.generate_field_id();
+      return container_id += "_chzn";
+    };
+    Chosen.prototype.build_container_div = function() {
+      var container_div;
       container_div = $("<div />", {
-        id: this.container_id,
+        id: this.container_id(),
         "class": "chzn-container " + (this.is_rtl ? 'chzn-rtl' : ''),
-        style: 'width: ' + this.f_width + 'px;'
+        style: "width: " + this.f_width + "px"
       });
       if (this.is_multiple) {
-        container_div.html('<ul class="chzn-choices"><li class="search-field"><input type="text" value="' + this.default_text + '" class="default" autocomplete="off" style="width:25px;" /></li></ul><div class="chzn-drop" style="left:-9000px;"><ul class="chzn-results"></ul></div>');
+        return container_div.html("<ul class=\"chzn-choices\">\n  <li class=\"search-field\">\n    <input type=\"text\" value=\"" + (this.default_text()) + "\" class=\"default\" autocomplete=\"off\" style=\"width:25px;\" />\n  </li>\n</ul>\n<div class=\"chzn-drop\" style=\"left:-9000px;\">\n  <ul class=\"chzn-results\"></ul>\n</div>");
       } else {
-        container_div.html('<a href="javascript:void(0)" class="chzn-single"><span>' + this.default_text + '</span><div><b></b></div></a><div class="chzn-drop" style="left:-9000px;"><div class="chzn-search"><input type="text" autocomplete="off" /></div><ul class="chzn-results"></ul></div>');
+        return container_div.html("<a href=\"javascript:void(0)\" class=\"chzn-single\">\n  <span>" + (this.default_text()) + "</span>\n  <div><b></b></div>\n</a>\n<div class=\"chzn-drop\" style=\"left:-9000px;\">\n  <div class=\"chzn-search\">\n    <input type=\"text\" autocomplete=\"off\" />\n  </div>\n  <ul class=\"chzn-results\"></ul>\n</div>");
       }
-      this.form_field_jq.hide().after(container_div);
-      this.container = $('#' + this.container_id);
+    };
+    Chosen.prototype.set_up_html = function() {
+      var dd_top, dd_width, sf_width;
+      this.f_width = this.$form_field.width();
+      this.$form_field.hide().after(this.build_container_div());
+      this.container = $('#' + this.container_id());
       this.container.addClass("chzn-container-" + (this.is_multiple ? "multi" : "single"));
       this.dropdown = this.container.find('div.chzn-drop').first();
       dd_top = this.container.height();
@@ -114,7 +128,7 @@
       this.search_results.mouseout(__bind(function(evt) {
         return this.search_results_mouseout(evt);
       }, this));
-      this.form_field_jq.bind("liszt:updated", __bind(function(evt) {
+      this.$form_field.bind("liszt:updated", __bind(function(evt) {
         return this.results_update_field(evt);
       }, this));
       this.search_field.blur(__bind(function(evt) {
@@ -210,7 +224,7 @@
       return this.search_field.focus();
     };
     Chosen.prototype.test_active_click = function(evt) {
-      if ($(evt.target).parents('#' + this.container_id).length) {
+      if ($(evt.target).parents('#' + this.container_id()).length) {
         return this.active_field = true;
       } else {
         return this.close_field();
@@ -225,7 +239,7 @@
         this.search_choices.find("li.search-choice").remove();
         this.choices = 0;
       } else if (!this.is_multiple) {
-        this.selected_item.find("span").text(this.default_text);
+        this.selected_item.find("span").text(this.default_text());
       }
       content = '';
       _ref = this.results_data;
@@ -249,8 +263,8 @@
     };
     Chosen.prototype.result_add_group = function(group) {
       if (!group.disabled) {
-        group.dom_id = this.container_id + "_g_" + group.array_index;
-        return '<li id="' + group.dom_id + '" class="group-result">' + $("<div />").text(group.label).html() + '</li>';
+        group.dom_id = this.container_id() + "_g_" + group.array_index;
+        return "<li id=\"" + group.dom_id + "\" class=\"group-result\">" + ($("<div />").text(group.label).html()) + "</li>";
       } else {
         return "";
       }
@@ -258,7 +272,7 @@
     Chosen.prototype.result_add_option = function(option) {
       var classes;
       if (!option.disabled) {
-        option.dom_id = this.container_id + "_o_" + option.array_index;
+        option.dom_id = this.container_id() + "_o_" + option.array_index;
         classes = option.selected && this.is_multiple ? [] : ["active-result"];
         if (option.selected) {
           classes.push("result-selected");
@@ -266,7 +280,7 @@
         if (option.group_array_index != null) {
           classes.push("group-option");
         }
-        return '<li id="' + option.dom_id + '" class="' + classes.join(' ') + '">' + option.html + '</li>';
+        return "<li id=\"" + option.dom_id + "\" class=\"" + (classes.join(' ')) + "\">" + option.html + "</li>";
       } else {
         return "";
       }
@@ -337,9 +351,9 @@
     };
     Chosen.prototype.set_tab_index = function(el) {
       var ti;
-      if (this.form_field_jq.attr("tabindex")) {
-        ti = this.form_field_jq.attr("tabindex");
-        this.form_field_jq.attr("tabindex", -1);
+      if (this.$form_field.attr("tabindex")) {
+        ti = this.$form_field.attr("tabindex");
+        this.$form_field.attr("tabindex", -1);
         if (this.is_multiple) {
           return this.search_field.attr("tabindex", ti);
         } else {
@@ -350,7 +364,7 @@
     };
     Chosen.prototype.show_search_field_default = function() {
       if (this.is_multiple && this.choices < 1 && !this.active_field) {
-        this.search_field.val(this.default_text);
+        this.search_field.val(this.default_text());
         return this.search_field.addClass("default");
       } else {
         this.search_field.val("");
@@ -385,9 +399,9 @@
     };
     Chosen.prototype.choice_build = function(item) {
       var choice_id, link;
-      choice_id = this.container_id + "_c_" + item.array_index;
+      choice_id = this.container_id() + "_c_" + item.array_index;
       this.choices += 1;
-      this.search_container.before('<li class="search-choice" id="' + choice_id + '"><span>' + item.html + '</span><a href="javascript:void(0)" class="search-choice-close" rel="' + item.array_index + '"></a></li>');
+      this.search_container.before("<li class=\"search-choice\" id=\"" + choice_id + "\">\n  <span>" + item.html + "</span>\n  <a href=\"javascript:void(0)\" class=\"search-choice-close\" rel=\"" + item.array_index + "\"></a>\n</li>");
       link = $('#' + choice_id).find("a").first();
       return link.click(__bind(function(evt) {
         return this.choice_destroy_link_click(evt);
@@ -432,7 +446,7 @@
           this.results_hide();
         }
         this.search_field.val("");
-        this.form_field_jq.trigger("change");
+        this.$form_field.trigger("change");
         return this.search_field_scale();
       }
     };
@@ -447,11 +461,11 @@
       result_data = this.results_data[pos];
       result_data.selected = false;
       this.form_field.options[result_data.options_index].selected = false;
-      result = $("#" + this.container_id + "_o_" + pos);
+      result = $("#" + this.container_id() + "_o_" + pos);
       result.removeClass("result-selected").addClass("active-result").show();
       this.result_clear_highlight();
       this.winnow_results();
-      this.form_field_jq.trigger("change");
+      this.$form_field.trigger("change");
       return this.search_field_scale();
     };
     Chosen.prototype.results_search = function(evt) {
@@ -466,7 +480,7 @@
       startTime = new Date();
       this.no_results_clear();
       results = 0;
-      searchText = this.search_field.val() === this.default_text ? "" : $('<div/>').text($.trim(this.search_field.val())).html();
+      searchText = this.search_field.val() === this.default_text() ? "" : $('<div/>').text($.trim(this.search_field.val())).html();
       regex = new RegExp(searchText.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, "\\$&"), 'i');
       _ref = this.results_data;
       for (_i = 0, _len = _ref.length; _i < _len; _i++) {

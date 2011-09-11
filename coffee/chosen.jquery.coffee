@@ -10,25 +10,32 @@ $.fn.extend({
     # Do no harm and return as soon as possible for unsupported browsers, namely IE6 and IE7
     return this if $.browser.msie and ($.browser.version is "6.0" or  $.browser.version is "7.0")
     $(this).each((input_field) ->
-      new Chosen(this, data, options) unless ($ this).hasClass "chzn-done"
+      new Chosen(this, data, options) unless $(this).hasClass "chzn-done"
     )
 })
 
 class Chosen
 
-  constructor: (elmn) ->
+  constructor: (element) ->
     this.set_default_values()
     
-    @form_field = elmn
-    @form_field_jq = $ @form_field
+    @form_field = element
+    @$form_field = $ @form_field
     @is_multiple = @form_field.multiple
-    @is_rtl = @form_field_jq.hasClass "chzn-rtl"
-
-    @default_text_default = if @form_field.multiple then "Select Some Options" else "Select an Option"
+    @is_rtl = @$form_field.hasClass "chzn-rtl"
 
     this.set_up_html()
     this.register_observers()
-    @form_field_jq.addClass "chzn-done"
+    @$form_field.addClass "chzn-done"
+
+  default_text: ->
+    return @$form_field.data 'placeholder' if @$form_field.data 'placeholder'
+
+    if @form_field.multiple
+      "Select Some Options"
+    else
+      "Select an Option"
+
 
   set_default_values: ->
     
@@ -40,27 +47,52 @@ class Chosen
     @result_single_selected = null
     @choices = 0
 
-  set_up_html: ->
-    @container_id = if @form_field.id.length then @form_field.id.replace(/(:|\.)/g, '_') else this.generate_field_id()
-    @container_id += "_chzn"
-    
-    @f_width = @form_field_jq.width()
-    
-    @default_text = if @form_field_jq.data 'placeholder' then @form_field_jq.data 'placeholder' else @default_text_default
-    
+  container_id: ->
+    container_id = if @form_field.id.length 
+      @form_field.id.replace(/(:|\.)/g, '_')
+    else
+      @generate_field_id()
+
+    container_id += "_chzn"
+
+  build_container_div: ->
     container_div = ($ "<div />", {
-      id: @container_id
+      id: @container_id()
       class: "chzn-container #{ if @is_rtl then 'chzn-rtl' else '' }"
-      style: 'width: ' + (@f_width) + 'px;' #use parens around @f_width so coffeescript doesn't think + ' px' is a function parameter
+      style: "width: #{@f_width}px"
     })
     
     if @is_multiple
-      container_div.html '<ul class="chzn-choices"><li class="search-field"><input type="text" value="' + @default_text + '" class="default" autocomplete="off" style="width:25px;" /></li></ul><div class="chzn-drop" style="left:-9000px;"><ul class="chzn-results"></ul></div>'
+      container_div.html """
+        <ul class="chzn-choices">
+          <li class="search-field">
+            <input type="text" value="#{@default_text()}" class="default" autocomplete="off" style="width:25px;" />
+          </li>
+        </ul>
+        <div class="chzn-drop" style="left:-9000px;">
+          <ul class="chzn-results"></ul>
+        </div>
+      """
     else
-      container_div.html '<a href="javascript:void(0)" class="chzn-single"><span>' + @default_text + '</span><div><b></b></div></a><div class="chzn-drop" style="left:-9000px;"><div class="chzn-search"><input type="text" autocomplete="off" /></div><ul class="chzn-results"></ul></div>'
+      container_div.html """
+        <a href="javascript:void(0)" class="chzn-single">
+          <span>#{@default_text()}</span>
+          <div><b></b></div>
+        </a>
+        <div class="chzn-drop" style="left:-9000px;">
+          <div class="chzn-search">
+            <input type="text" autocomplete="off" />
+          </div>
+          <ul class="chzn-results"></ul>
+        </div>
+      """
 
-    @form_field_jq.hide().after container_div
-    @container = ($ '#' + @container_id)
+  set_up_html: ->
+    
+    @f_width = @$form_field.width()
+
+    @$form_field.hide().after @build_container_div()
+    @container = ($ '#' + @container_id())
     @container.addClass( "chzn-container-" + (if @is_multiple then "multi" else "single") )
     @dropdown = @container.find('div.chzn-drop').first()
     
@@ -97,7 +129,7 @@ class Chosen
     @search_results.mouseover (evt) => this.search_results_mouseover(evt)
     @search_results.mouseout (evt) => this.search_results_mouseout(evt)
 
-    @form_field_jq.bind "liszt:updated", (evt) => this.results_update_field(evt)
+    @$form_field.bind "liszt:updated", (evt) => this.results_update_field(evt)
 
     @search_field.blur (evt) => this.input_blur(evt)
     @search_field.keyup (evt) => this.keyup_checker(evt)
@@ -169,7 +201,7 @@ class Chosen
 
 
   test_active_click: (evt) ->
-    if $(evt.target).parents('#' + @container_id).length
+    if $(evt.target).parents('#' + @container_id()).length
       @active_field = true
     else
       this.close_field()
@@ -183,7 +215,7 @@ class Chosen
       @search_choices.find("li.search-choice").remove()
       @choices = 0
     else if not @is_multiple
-      @selected_item.find("span").text @default_text
+      @selected_item.find("span").text @default_text()
 
     content = ''
     for data in @results_data
@@ -205,20 +237,20 @@ class Chosen
 
   result_add_group: (group) ->
     if not group.disabled
-      group.dom_id = @container_id + "_g_" + group.array_index
-      '<li id="' + group.dom_id + '" class="group-result">' + $("<div />").text(group.label).html() + '</li>'
+      group.dom_id = @container_id() + "_g_" + group.array_index
+      """<li id="#{group.dom_id}" class="group-result">#{$("<div />").text(group.label).html()}</li>"""
     else
       ""
   
   result_add_option: (option) ->
     if not option.disabled
-      option.dom_id = @container_id + "_o_" + option.array_index
+      option.dom_id = @container_id() + "_o_" + option.array_index
       
       classes = if option.selected and @is_multiple then [] else ["active-result"]
       classes.push "result-selected" if option.selected
       classes.push "group-option" if option.group_array_index?
       
-      '<li id="' + option.dom_id + '" class="' + classes.join(' ') + '">' + option.html + '</li>'
+      """<li id="#{option.dom_id}" class="#{classes.join(' ')}">#{option.html}</li>"""
     else
       ""
 
@@ -279,9 +311,9 @@ class Chosen
 
 
   set_tab_index: (el) ->
-    if @form_field_jq.attr "tabindex"
-      ti = @form_field_jq.attr "tabindex"
-      @form_field_jq.attr "tabindex", -1
+    if @$form_field.attr "tabindex"
+      ti = @$form_field.attr "tabindex"
+      @$form_field.attr "tabindex", -1
 
       if @is_multiple
         @search_field.attr "tabindex", ti
@@ -291,7 +323,7 @@ class Chosen
 
   show_search_field_default: ->
     if @is_multiple and @choices < 1 and not @active_field
-      @search_field.val(@default_text)
+      @search_field.val @default_text()
       @search_field.addClass "default"
     else
       @search_field.val("")
@@ -317,9 +349,14 @@ class Chosen
       this.results_show()
 
   choice_build: (item) ->
-    choice_id = @container_id + "_c_" + item.array_index
+    choice_id = @container_id() + "_c_" + item.array_index
     @choices += 1
-    @search_container.before  '<li class="search-choice" id="' + choice_id + '"><span>' + item.html + '</span><a href="javascript:void(0)" class="search-choice-close" rel="' + item.array_index + '"></a></li>'
+    @search_container.before """
+      <li class="search-choice" id="#{choice_id}">
+        <span>#{item.html}</span>
+        <a href="javascript:void(0)" class="search-choice-close" rel="#{item.array_index}"></a>
+      </li>
+    """
     link = $('#' + choice_id).find("a").first()
     link.click (evt) => this.choice_destroy_link_click(evt)
 
@@ -366,7 +403,7 @@ class Chosen
 
       @search_field.val ""
 
-      @form_field_jq.trigger "change"
+      @$form_field.trigger "change"
       this.search_field_scale()
 
   result_activate: (el) ->
@@ -380,13 +417,13 @@ class Chosen
     result_data.selected = false
 
     @form_field.options[result_data.options_index].selected = false
-    result = $("#" + @container_id + "_o_" + pos)
+    result = $("#" + @container_id() + "_o_" + pos)
     result.removeClass("result-selected").addClass("active-result").show()
 
     this.result_clear_highlight()
     this.winnow_results()
 
-    @form_field_jq.trigger "change"
+    @$form_field.trigger "change"
     this.search_field_scale()
 
   results_search: (evt) ->
@@ -401,7 +438,7 @@ class Chosen
     
     results = 0
 
-    searchText = if @search_field.val() is @default_text then "" else $('<div/>').text($.trim(@search_field.val())).html()
+    searchText = if @search_field.val() is @default_text() then "" else $('<div/>').text($.trim(@search_field.val())).html()
     regex = new RegExp(searchText.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, "\\$&"), 'i')
 
     for option in @results_data
