@@ -160,6 +160,15 @@ class Chosen
 
 
   select_changed: (evt) =>
+    @select_item(@form_field.selectedIndex) unless @is_multiple
+
+  select_item: (index) ->
+    item = @results_data[index + '']
+    id = @option_id_for_index(item.array_index)
+    @selected_item.find("span").first().text item.text
+    @container.find('li.result-selected').removeClass('result-selected')
+    $("##{id}").addClass('result-selected')
+
   mouse_enter: => @mouse_on_container = true
   mouse_leave: => @mouse_on_container = false
 
@@ -244,10 +253,13 @@ class Chosen
       """<li id="#{group.dom_id}" class="group-result">#{$("<div />").text(group.label).html()}</li>"""
     else
       ""
+
+  option_id_for_index: (index) ->
+    @container_id() + "_o_" + index
   
   result_add_option: (option) ->
     if not option.disabled
-      option.dom_id = @container_id() + "_o_" + option.array_index
+      option.dom_id = @option_id_for_index(option.array_index)
       
       classes = if option.selected and @is_multiple then [] else ["active-result"]
       classes.push "result-selected" if option.selected
