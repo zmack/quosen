@@ -13,14 +13,14 @@ $.fn.extend({
     )
 })
 
-class Chosen
+
+class ChosenBase
 
   constructor: (element) ->
     @set_default_values()
     
     @form_field = element
     @$form_field = $ @form_field
-    @is_multiple = @form_field.multiple
     @is_rtl = @$form_field.hasClass "chzn-rtl"
 
     @set_up_html()
@@ -64,31 +64,8 @@ class Chosen
       class: "chzn-container #{@additional_container_classes}"
       style: "width: #{@f_width}px"
     })
-    
-    if @is_multiple
-      container_div.html """
-        <ul class="chzn-choices">
-          <li class="search-field">
-            <input type="text" value="#{@default_text()}" class="default" autocomplete="off" style="width:25px;" />
-          </li>
-        </ul>
-        <div class="chzn-drop" style="left:-9000px;">
-          <ul class="chzn-results"></ul>
-        </div>
-      """
-    else
-      container_div.html """
-        <a href="javascript:void(0)" class="chzn-single">
-          <span>#{@default_text()}</span>
-          <div><b></b></div>
-        </a>
-        <div class="chzn-drop" style="left:-9000px;">
-          <div class="chzn-search">
-            <input type="text" autocomplete="off" />
-          </div>
-          <ul class="chzn-results"></ul>
-        </div>
-      """
+
+    container_div.html @container_div_content()
 
   set_up_html: ->
     
@@ -96,7 +73,6 @@ class Chosen
 
     @$form_field.hide().after @build_container_div()
     @container = ($ '#' + @container_id())
-    @container.addClass( "chzn-container-" + (if @is_multiple then "multi" else "single") )
     @dropdown = @container.find('div.chzn-drop').first()
     
     dd_top = @container.height()
@@ -110,14 +86,7 @@ class Chosen
 
     @search_no_results = @container.find('li.no-results').first()
     
-    if @is_multiple
-      @search_choices = @container.find('ul.chzn-choices').first()
-      @search_container = @container.find('li.search-field').first()
-    else
-      @search_container = @container.find('div.chzn-search').first()
-      @selected_item = @container.find('.chzn-single').first()
-      sf_width = dd_width - get_side_border_padding(@search_container) - get_side_border_padding(@search_field)
-      @search_field.css( {"width" : sf_width + "px"} )
+    @initialize_search_container()
     
     @results_build()
     @set_tab_index()
@@ -133,17 +102,11 @@ class Chosen
     @search_results.mouseout @search_results_mouseout
 
     @$form_field.bind "liszt:updated", @results_update_field
-    @$form_field.change @select_changed
 
     @search_field.blur @input_blur
     @search_field.keyup @keyup_checker
     @search_field.keydown @keydown_checker
 
-    if @is_multiple
-      @search_choices.click @choices_click
-      @search_field.focus @input_focus
-    else
-      @selected_item.focus @activate_field
 
   container_mousedown: (evt) =>
     if evt and evt.type is "mousedown"
@@ -161,9 +124,6 @@ class Chosen
     else
       @pending_destroy_click = false
 
-
-  select_changed: (evt) =>
-    @select_item(@form_field.selectedIndex) unless @is_multiple
 
   select_item: (index) ->
     item = @results_data[index + '']
@@ -222,7 +182,6 @@ class Chosen
       @close_field()
     
   results_build: ->
-    startTime = new Date()
     @parsing = true
     @results_data = root.SelectParser.select_to_array @form_field
 
@@ -307,11 +266,6 @@ class Chosen
       @results_show()
 
   results_show: ->
-    if not @is_multiple
-      @selected_item.addClass "chzn-single-with-drop"
-      if @result_single_selected
-        @result_do_highlight( @result_single_selected )
-
     dd_top = if @is_multiple then @container.height() else (@container.height() - 1)
     @dropdown.css {"top":  dd_top + "px", "left":0}
     @results_showing = true
@@ -328,24 +282,13 @@ class Chosen
     @results_showing = false
 
 
-  set_tab_index: (el) ->
-    if @$form_field.attr "tabindex"
-      ti = @$form_field.attr "tabindex"
-      @$form_field.attr "tabindex", -1
+  set_tab_index: ->
+    return unless @$form_field.attr "tabindex"
 
-      if @is_multiple
-        @search_field.attr "tabindex", ti
-      else
-        @selected_item.attr "tabindex", ti
-        @search_field.attr "tabindex", -1
+    ti = @$form_field.attr "tabindex"
+    @$form_field.attr "tabindex", -1
+    @update_selected_tab_index(ti)
 
-  show_search_field_default: ->
-    if @is_multiple and @choices < 1 and not @active_field
-      @search_field.val @default_text()
-      @search_field.addClass "default"
-    else
-      @search_field.val("")
-      @search_field.removeClass "default"
 
   search_results_mouseup: (evt) =>
     target = if $(evt.target).hasClass "active-result" then $(evt.target) else $(evt.target).parents(".active-result").first()
@@ -451,7 +394,6 @@ class Chosen
       @results_show()
 
   winnow_results: ->
-    startTime = new Date()
     @no_results_clear()
     
     results = 0
@@ -609,30 +551,6 @@ class Chosen
 
 
   search_field_scale: ->
-    if @is_multiple
-      h = 0
-      w = 0
-
-      style_block = "position:absolute; left: -1000px; top: -1000px; display:none;"
-      styles = ['font-size','font-style', 'font-weight', 'font-family','line-height', 'text-transform', 'letter-spacing']
-      
-      for style in styles
-        style_block += style + ":" + @search_field.css(style) + ";"
-      
-      div = $('<div />', { 'style' : style_block })
-      div.text @search_field.val()
-      $('body').append div
-
-      w = div.width() + 25
-      div.remove()
-
-      if( w > @f_width-10 )
-        w = @f_width - 10
-
-      @search_field.css({'width': w + 'px'})
-
-      dd_top = @container.height()
-      @dropdown.css({"top":  dd_top + "px"})
   
   generate_field_id: ->
     new_id = @generate_random_id()
@@ -649,6 +567,128 @@ class Chosen
     chars = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXTZ";
     rand = Math.floor(Math.random() * chars.length)
     newchar = chars.substring rand, rand+1
+
+class ChosenSingle extends ChosenBase
+  is_multiple: false
+  container_div_content: ->
+    """
+      <a href="javascript:void(0)" class="chzn-single">
+        <span>#{@default_text()}</span>
+        <div><b></b></div>
+      </a>
+      <div class="chzn-drop" style="left:-9000px;">
+        <div class="chzn-search">
+          <input type="text" autocomplete="off" />
+        </div>
+        <ul class="chzn-results"></ul>
+      </div>
+    """
+
+  initialize_search_container: ->
+    @search_container = @container.find('div.chzn-search').first()
+    @selected_item = @container.find('.chzn-single').first()
+    dd_width = (@f_width - get_side_border_padding(@dropdown))
+    sf_width = dd_width - get_side_border_padding(@search_container) - get_side_border_padding(@search_field)
+    @search_field.css( {"width" : sf_width + "px"} )
+
+  register_observers: ->
+    super
+    @selected_item.focus @activate_field
+    @$form_field.change @select_changed
+
+  select_changed: (evt) =>
+    @select_item(@form_field.selectedIndex)
+
+  set_up_html: ->
+    super
+    @container.addClass "chzn-container-single"
+
+  update_selected_tab_index: (ti) ->
+    @selected_item.attr "tabindex", ti
+    @search_field.attr "tabindex", -1
+
+  results_show: ->
+    @selected_item.addClass "chzn-single-with-drop"
+    if @result_single_selected
+      @result_do_highlight( @result_single_selected )
+
+    super
+
+  show_search_field_default: ->
+    @search_field.val("")
+    @search_field.removeClass "default"
+
+
+class ChosenMultiple extends ChosenBase
+  is_multiple: true
+  container_div_content: ->
+    """
+      <ul class="chzn-choices">
+        <li class="search-field">
+          <input type="text" value="#{@default_text()}" class="default" autocomplete="off" style="width:25px;" />
+        </li>
+      </ul>
+      <div class="chzn-drop" style="left:-9000px;">
+        <ul class="chzn-results"></ul>
+      </div>
+    """
+
+  initialize_search_container: ->
+    @search_choices = @container.find('ul.chzn-choices').first()
+    @search_container = @container.find('li.search-field').first()
+
+  register_observers: ->
+    super
+    @search_choices.click @choices_click
+    @search_field.focus @input_focus
+
+  set_up_html: ->
+    super
+    @container.addClass "chzn-container-multi"
+
+  update_selected_tab_index: (ti) ->
+    @search_field.attr "tabindex", ti
+
+  show_search_field_default: ->
+    if @choices < 1 and not @active_field
+      @search_field.val @default_text()
+      @search_field.addClass "default"
+    else
+      @search_field.val("")
+      @search_field.removeClass "default"
+
+  search_field_scale: ->
+    h = 0
+    w = 0
+
+    style_block = "position:absolute; left: -1000px; top: -1000px; display:none;"
+    styles = ['font-size','font-style', 'font-weight', 'font-family','line-height', 'text-transform', 'letter-spacing']
+    
+    for style in styles
+      style_block += style + ":" + @search_field.css(style) + ";"
+    
+    div = $('<div />', { 'style' : style_block })
+    div.text @search_field.val()
+    $('body').append div
+
+    w = div.width() + 25
+    div.remove()
+
+    if( w > @f_width-10 )
+      w = @f_width - 10
+
+    @search_field.css({'width': w + 'px'})
+
+    dd_top = @container.height()
+    @dropdown.css({"top":  dd_top + "px"})
+
+
+class Chosen
+  constructor: (element) ->
+    if element.multiple
+      return new ChosenMultiple(element)
+    else
+      return new ChosenSingle(element)
 
 get_side_border_padding = (elmt) ->
   side_border_padding = elmt.outerWidth() - elmt.width()

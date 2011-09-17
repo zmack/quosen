@@ -11,8 +11,15 @@
   /*
   Copyright (c) 2011 by Harvest
   */
-  var $, Chosen, get_side_border_padding, root;
-  var __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; };
+  var $, Chosen, ChosenBase, ChosenMultiple, ChosenSingle, get_side_border_padding, root;
+  var __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; }, __hasProp = Object.prototype.hasOwnProperty, __extends = function(child, parent) {
+    for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; }
+    function ctor() { this.constructor = child; }
+    ctor.prototype = parent.prototype;
+    child.prototype = new ctor;
+    child.__super__ = parent.prototype;
+    return child;
+  };
   root = this;
   $ = jQuery;
   $.fn.extend({
@@ -27,8 +34,8 @@
       });
     }
   });
-  Chosen = (function() {
-    function Chosen(element) {
+  ChosenBase = (function() {
+    function ChosenBase(element) {
       this.keydown_checker = __bind(this.keydown_checker, this);
       this.keyup_checker = __bind(this.keyup_checker, this);
       this.choices_click = __bind(this.choices_click, this);
@@ -43,17 +50,15 @@
       this.input_focus = __bind(this.input_focus, this);
       this.mouse_leave = __bind(this.mouse_leave, this);
       this.mouse_enter = __bind(this.mouse_enter, this);
-      this.select_changed = __bind(this.select_changed, this);
       this.container_mousedown = __bind(this.container_mousedown, this);      this.set_default_values();
       this.form_field = element;
       this.$form_field = $(this.form_field);
-      this.is_multiple = this.form_field.multiple;
       this.is_rtl = this.$form_field.hasClass("chzn-rtl");
       this.set_up_html();
       this.register_observers();
       this.$form_field.addClass("chzn-done");
     }
-    Chosen.prototype.default_text = function() {
+    ChosenBase.prototype.default_text = function() {
       if (this.$form_field.data('placeholder')) {
         return this.$form_field.data('placeholder');
       }
@@ -63,7 +68,7 @@
         return "Select an Option";
       }
     };
-    Chosen.prototype.set_default_values = function() {
+    ChosenBase.prototype.set_default_values = function() {
       this.active_field = false;
       this.mouse_on_container = false;
       this.results_showing = false;
@@ -71,37 +76,32 @@
       this.result_single_selected = null;
       return this.choices = 0;
     };
-    Chosen.prototype.container_id = function() {
+    ChosenBase.prototype.container_id = function() {
       var container_id;
       container_id = this.form_field.id.length ? this.form_field.id.replace(/(:|\.)/g, '_') : this.generate_field_id();
       return container_id += "_chzn";
     };
-    Chosen.prototype.additional_container_classes = function() {
+    ChosenBase.prototype.additional_container_classes = function() {
       if (this.is_rtl) {
         return 'chzn-rtl';
       } else {
         return '';
       }
     };
-    Chosen.prototype.build_container_div = function() {
+    ChosenBase.prototype.build_container_div = function() {
       var container_div;
       container_div = $("<div />", {
         id: this.container_id(),
         "class": "chzn-container " + this.additional_container_classes,
         style: "width: " + this.f_width + "px"
       });
-      if (this.is_multiple) {
-        return container_div.html("<ul class=\"chzn-choices\">\n  <li class=\"search-field\">\n    <input type=\"text\" value=\"" + (this.default_text()) + "\" class=\"default\" autocomplete=\"off\" style=\"width:25px;\" />\n  </li>\n</ul>\n<div class=\"chzn-drop\" style=\"left:-9000px;\">\n  <ul class=\"chzn-results\"></ul>\n</div>");
-      } else {
-        return container_div.html("<a href=\"javascript:void(0)\" class=\"chzn-single\">\n  <span>" + (this.default_text()) + "</span>\n  <div><b></b></div>\n</a>\n<div class=\"chzn-drop\" style=\"left:-9000px;\">\n  <div class=\"chzn-search\">\n    <input type=\"text\" autocomplete=\"off\" />\n  </div>\n  <ul class=\"chzn-results\"></ul>\n</div>");
-      }
+      return container_div.html(this.container_div_content());
     };
-    Chosen.prototype.set_up_html = function() {
-      var dd_top, dd_width, sf_width;
+    ChosenBase.prototype.set_up_html = function() {
+      var dd_top, dd_width;
       this.f_width = this.$form_field.width();
       this.$form_field.hide().after(this.build_container_div());
       this.container = $('#' + this.container_id());
-      this.container.addClass("chzn-container-" + (this.is_multiple ? "multi" : "single"));
       this.dropdown = this.container.find('div.chzn-drop').first();
       dd_top = this.container.height();
       dd_width = this.f_width - get_side_border_padding(this.dropdown);
@@ -113,21 +113,11 @@
       this.search_results = this.container.find('ul.chzn-results').first();
       this.search_field_scale();
       this.search_no_results = this.container.find('li.no-results').first();
-      if (this.is_multiple) {
-        this.search_choices = this.container.find('ul.chzn-choices').first();
-        this.search_container = this.container.find('li.search-field').first();
-      } else {
-        this.search_container = this.container.find('div.chzn-search').first();
-        this.selected_item = this.container.find('.chzn-single').first();
-        sf_width = dd_width - get_side_border_padding(this.search_container) - get_side_border_padding(this.search_field);
-        this.search_field.css({
-          "width": sf_width + "px"
-        });
-      }
+      this.initialize_search_container();
       this.results_build();
       return this.set_tab_index();
     };
-    Chosen.prototype.register_observers = function() {
+    ChosenBase.prototype.register_observers = function() {
       this.container.mousedown(this.container_mousedown);
       this.container.mouseenter(this.mouse_enter);
       this.container.mouseleave(this.mouse_leave);
@@ -135,18 +125,11 @@
       this.search_results.mouseover(this.search_results_mouseover);
       this.search_results.mouseout(this.search_results_mouseout);
       this.$form_field.bind("liszt:updated", this.results_update_field);
-      this.$form_field.change(this.select_changed);
       this.search_field.blur(this.input_blur);
       this.search_field.keyup(this.keyup_checker);
-      this.search_field.keydown(this.keydown_checker);
-      if (this.is_multiple) {
-        this.search_choices.click(this.choices_click);
-        return this.search_field.focus(this.input_focus);
-      } else {
-        return this.selected_item.focus(this.activate_field);
-      }
+      return this.search_field.keydown(this.keydown_checker);
     };
-    Chosen.prototype.container_mousedown = function(evt) {
+    ChosenBase.prototype.container_mousedown = function(evt) {
       if (evt && evt.type === "mousedown") {
         evt.stopPropagation();
       }
@@ -166,12 +149,7 @@
         return this.pending_destroy_click = false;
       }
     };
-    Chosen.prototype.select_changed = function(evt) {
-      if (!this.is_multiple) {
-        return this.select_item(this.form_field.selectedIndex);
-      }
-    };
-    Chosen.prototype.select_item = function(index) {
+    ChosenBase.prototype.select_item = function(index) {
       var id, item;
       item = this.results_data[index + ''];
       id = this.option_id_for_index(item.array_index);
@@ -179,20 +157,20 @@
       this.container.find('li.result-selected').removeClass('result-selected');
       return $("#" + id).addClass('result-selected');
     };
-    Chosen.prototype.mouse_enter = function() {
+    ChosenBase.prototype.mouse_enter = function() {
       return this.mouse_on_container = true;
     };
-    Chosen.prototype.mouse_leave = function() {
+    ChosenBase.prototype.mouse_leave = function() {
       return this.mouse_on_container = false;
     };
-    Chosen.prototype.input_focus = function(evt) {
+    ChosenBase.prototype.input_focus = function(evt) {
       if (!this.active_field) {
         return setTimeout((__bind(function() {
           return this.container_mousedown();
         }, this)), 50);
       }
     };
-    Chosen.prototype.input_blur = function(evt) {
+    ChosenBase.prototype.input_blur = function(evt) {
       if (!this.mouse_on_container) {
         this.active_field = false;
         return setTimeout((__bind(function() {
@@ -200,12 +178,12 @@
         }, this)), 100);
       }
     };
-    Chosen.prototype.blur_test = function(evt) {
+    ChosenBase.prototype.blur_test = function(evt) {
       if (!this.active_field && this.container.hasClass("chzn-container-active")) {
         return this.close_field();
       }
     };
-    Chosen.prototype.close_field = function() {
+    ChosenBase.prototype.close_field = function() {
       $(document).unbind("click", this.test_active_click);
       if (!this.is_multiple) {
         this.selected_item.attr("tabindex", this.search_field.attr("tabindex"));
@@ -219,7 +197,7 @@
       this.show_search_field_default();
       return this.search_field_scale();
     };
-    Chosen.prototype.activate_field = function() {
+    ChosenBase.prototype.activate_field = function() {
       if (!this.is_multiple && !this.active_field) {
         this.search_field.attr("tabindex", this.selected_item.attr("tabindex"));
         this.selected_item.attr("tabindex", -1);
@@ -229,16 +207,15 @@
       this.search_field.val(this.search_field.val());
       return this.search_field.focus();
     };
-    Chosen.prototype.test_active_click = function(evt) {
+    ChosenBase.prototype.test_active_click = function(evt) {
       if ($(evt.target).parents('#' + this.container_id()).length) {
         return this.active_field = true;
       } else {
         return this.close_field();
       }
     };
-    Chosen.prototype.results_build = function() {
-      var content, data, startTime, _i, _len, _ref;
-      startTime = new Date();
+    ChosenBase.prototype.results_build = function() {
+      var content, data, _i, _len, _ref;
       this.parsing = true;
       this.results_data = root.SelectParser.select_to_array(this.form_field);
       if (this.is_multiple && this.choices > 0) {
@@ -267,7 +244,7 @@
       this.search_results.html(content);
       return this.parsing = false;
     };
-    Chosen.prototype.result_add_group = function(group) {
+    ChosenBase.prototype.result_add_group = function(group) {
       if (!group.disabled) {
         group.dom_id = this.container_id() + "_g_" + group.array_index;
         return "<li id=\"" + group.dom_id + "\" class=\"group-result\">" + ($("<div />").text(group.label).html()) + "</li>";
@@ -275,10 +252,10 @@
         return "";
       }
     };
-    Chosen.prototype.option_id_for_index = function(index) {
+    ChosenBase.prototype.option_id_for_index = function(index) {
       return this.container_id() + "_o_" + index;
     };
-    Chosen.prototype.result_add_option = function(option) {
+    ChosenBase.prototype.result_add_option = function(option) {
       var classes;
       if (!option.disabled) {
         option.dom_id = this.option_id_for_index(option.array_index);
@@ -294,12 +271,12 @@
         return "";
       }
     };
-    Chosen.prototype.results_update_field = function() {
+    ChosenBase.prototype.results_update_field = function() {
       this.result_clear_highlight();
       this.result_single_selected = null;
       return this.results_build();
     };
-    Chosen.prototype.result_do_highlight = function(el) {
+    ChosenBase.prototype.result_do_highlight = function(el) {
       var high_bottom, high_top, maxHeight, visible_bottom, visible_top;
       if (el.length) {
         this.result_clear_highlight();
@@ -317,27 +294,21 @@
         }
       }
     };
-    Chosen.prototype.result_clear_highlight = function() {
+    ChosenBase.prototype.result_clear_highlight = function() {
       if (this.result_highlight) {
         this.result_highlight.removeClass("highlighted");
       }
       return this.result_highlight = null;
     };
-    Chosen.prototype.results_toggle = function() {
+    ChosenBase.prototype.results_toggle = function() {
       if (this.results_showing) {
         return this.results_hide();
       } else {
         return this.results_show();
       }
     };
-    Chosen.prototype.results_show = function() {
+    ChosenBase.prototype.results_show = function() {
       var dd_top;
-      if (!this.is_multiple) {
-        this.selected_item.addClass("chzn-single-with-drop");
-        if (this.result_single_selected) {
-          this.result_do_highlight(this.result_single_selected);
-        }
-      }
       dd_top = this.is_multiple ? this.container.height() : this.container.height() - 1;
       this.dropdown.css({
         "top": dd_top + "px",
@@ -348,7 +319,7 @@
       this.search_field.val(this.search_field.val());
       return this.winnow_results();
     };
-    Chosen.prototype.results_hide = function() {
+    ChosenBase.prototype.results_hide = function() {
       if (!this.is_multiple) {
         this.selected_item.removeClass("chzn-single-with-drop");
       }
@@ -358,29 +329,16 @@
       });
       return this.results_showing = false;
     };
-    Chosen.prototype.set_tab_index = function(el) {
+    ChosenBase.prototype.set_tab_index = function() {
       var ti;
-      if (this.$form_field.attr("tabindex")) {
-        ti = this.$form_field.attr("tabindex");
-        this.$form_field.attr("tabindex", -1);
-        if (this.is_multiple) {
-          return this.search_field.attr("tabindex", ti);
-        } else {
-          this.selected_item.attr("tabindex", ti);
-          return this.search_field.attr("tabindex", -1);
-        }
+      if (!this.$form_field.attr("tabindex")) {
+        return;
       }
+      ti = this.$form_field.attr("tabindex");
+      this.$form_field.attr("tabindex", -1);
+      return this.update_selected_tab_index(ti);
     };
-    Chosen.prototype.show_search_field_default = function() {
-      if (this.is_multiple && this.choices < 1 && !this.active_field) {
-        this.search_field.val(this.default_text());
-        return this.search_field.addClass("default");
-      } else {
-        this.search_field.val("");
-        return this.search_field.removeClass("default");
-      }
-    };
-    Chosen.prototype.search_results_mouseup = function(evt) {
+    ChosenBase.prototype.search_results_mouseup = function(evt) {
       var target;
       target = $(evt.target).hasClass("active-result") ? $(evt.target) : $(evt.target).parents(".active-result").first();
       if (target.length) {
@@ -388,25 +346,25 @@
         return this.result_select(evt);
       }
     };
-    Chosen.prototype.search_results_mouseover = function(evt) {
+    ChosenBase.prototype.search_results_mouseover = function(evt) {
       var target;
       target = $(evt.target).hasClass("active-result") ? $(evt.target) : $(evt.target).parents(".active-result").first();
       if (target) {
         return this.result_do_highlight(target);
       }
     };
-    Chosen.prototype.search_results_mouseout = function(evt) {
+    ChosenBase.prototype.search_results_mouseout = function(evt) {
       if ($(evt.target).hasClass("active-result" || $(evt.target).parents('.active-result').first())) {
         return this.result_clear_highlight();
       }
     };
-    Chosen.prototype.choices_click = function(evt) {
+    ChosenBase.prototype.choices_click = function(evt) {
       evt.preventDefault();
       if (this.active_field && !($(evt.target).hasClass("search-choice" || $(evt.target).parents('.search-choice').first)) && !this.results_showing) {
         return this.results_show();
       }
     };
-    Chosen.prototype.choice_build = function(item) {
+    ChosenBase.prototype.choice_build = function(item) {
       var choice_id, link;
       choice_id = this.container_id() + "_c_" + item.array_index;
       this.choices += 1;
@@ -416,12 +374,12 @@
         return this.choice_destroy_link_click(evt);
       }, this));
     };
-    Chosen.prototype.choice_destroy_link_click = function(evt) {
+    ChosenBase.prototype.choice_destroy_link_click = function(evt) {
       evt.preventDefault();
       this.pending_destroy_click = true;
       return this.choice_destroy($(evt.target));
     };
-    Chosen.prototype.choice_destroy = function(link) {
+    ChosenBase.prototype.choice_destroy = function(link) {
       this.choices -= 1;
       this.show_search_field_default();
       if (this.is_multiple && this.choices > 0 && this.search_field.val().length < 1) {
@@ -430,7 +388,7 @@
       this.result_deselect(link.attr("rel"));
       return link.parents('li').first().remove();
     };
-    Chosen.prototype.result_select = function(evt) {
+    ChosenBase.prototype.result_select = function(evt) {
       var high, high_id, item, position;
       if (this.result_highlight) {
         high = this.result_highlight;
@@ -459,13 +417,13 @@
         return this.search_field_scale();
       }
     };
-    Chosen.prototype.result_activate = function(el) {
+    ChosenBase.prototype.result_activate = function(el) {
       return el.addClass("active-result").show();
     };
-    Chosen.prototype.result_deactivate = function(el) {
+    ChosenBase.prototype.result_deactivate = function(el) {
       return el.removeClass("active-result").hide();
     };
-    Chosen.prototype.result_deselect = function(pos) {
+    ChosenBase.prototype.result_deselect = function(pos) {
       var result, result_data;
       result_data = this.results_data[pos];
       result_data.selected = false;
@@ -477,16 +435,15 @@
       this.$form_field.trigger("change");
       return this.search_field_scale();
     };
-    Chosen.prototype.results_search = function(evt) {
+    ChosenBase.prototype.results_search = function(evt) {
       if (this.results_showing) {
         return this.winnow_results();
       } else {
         return this.results_show();
       }
     };
-    Chosen.prototype.winnow_results = function() {
-      var found, option, part, parts, regex, result_id, results, searchText, startTime, startpos, text, _i, _j, _len, _len2, _ref;
-      startTime = new Date();
+    ChosenBase.prototype.winnow_results = function() {
+      var found, option, part, parts, regex, result_id, results, searchText, startpos, text, _i, _j, _len, _len2, _ref;
       this.no_results_clear();
       results = 0;
       searchText = this.search_field.val() === this.default_text() ? "" : $('<div/>').text($.trim(this.search_field.val())).html();
@@ -545,7 +502,7 @@
         return this.winnow_results_set_highlight();
       }
     };
-    Chosen.prototype.winnow_results_clear = function() {
+    ChosenBase.prototype.winnow_results_clear = function() {
       var li, lis, _i, _len, _results;
       this.search_field.val("");
       lis = this.search_results.find("li");
@@ -557,7 +514,7 @@
       }
       return _results;
     };
-    Chosen.prototype.winnow_results_set_highlight = function() {
+    ChosenBase.prototype.winnow_results_set_highlight = function() {
       var do_high, selected_results;
       if (!this.result_highlight) {
         selected_results = !this.is_multiple ? this.search_results.find(".result-selected") : [];
@@ -567,16 +524,16 @@
         }
       }
     };
-    Chosen.prototype.no_results = function(terms) {
+    ChosenBase.prototype.no_results = function(terms) {
       var no_results_html;
       no_results_html = $('<li class="no-results">No results match "<span></span>"</li>');
       no_results_html.find("span").first().html(terms);
       return this.search_results.append(no_results_html);
     };
-    Chosen.prototype.no_results_clear = function() {
+    ChosenBase.prototype.no_results_clear = function() {
       return this.search_results.find(".no-results").remove();
     };
-    Chosen.prototype.keydown_arrow = function() {
+    ChosenBase.prototype.keydown_arrow = function() {
       var first_active, next_sib;
       if (!this.result_highlight) {
         first_active = this.search_results.find("li.active-result").first();
@@ -593,7 +550,7 @@
         return this.results_show();
       }
     };
-    Chosen.prototype.keyup_arrow = function() {
+    ChosenBase.prototype.keyup_arrow = function() {
       var prev_sibs;
       if (!this.results_showing && !this.is_multiple) {
         return this.results_show();
@@ -609,7 +566,7 @@
         }
       }
     };
-    Chosen.prototype.keydown_backstroke = function() {
+    ChosenBase.prototype.keydown_backstroke = function() {
       if (this.pending_backstroke) {
         this.choice_destroy(this.pending_backstroke.find("a").first());
         return this.clear_backstroke();
@@ -618,13 +575,13 @@
         return this.pending_backstroke.addClass("search-choice-focus");
       }
     };
-    Chosen.prototype.clear_backstroke = function() {
+    ChosenBase.prototype.clear_backstroke = function() {
       if (this.pending_backstroke) {
         this.pending_backstroke.removeClass("search-choice-focus");
       }
       return this.pending_backstroke = null;
     };
-    Chosen.prototype.keyup_checker = function(evt) {
+    ChosenBase.prototype.keyup_checker = function(evt) {
       var stroke, _ref;
       stroke = (_ref = evt.which) != null ? _ref : evt.keyCode;
       this.search_field_scale();
@@ -659,7 +616,7 @@
           return this.results_search();
       }
     };
-    Chosen.prototype.keydown_checker = function(evt) {
+    ChosenBase.prototype.keydown_checker = function(evt) {
       var stroke, _ref;
       stroke = (_ref = evt.which) != null ? _ref : evt.keyCode;
       this.search_field_scale();
@@ -685,43 +642,14 @@
           break;
       }
     };
-    Chosen.prototype.search_field_scale = function() {
-      var dd_top, div, h, style, style_block, styles, w, _i, _len;
-      if (this.is_multiple) {
-        h = 0;
-        w = 0;
-        style_block = "position:absolute; left: -1000px; top: -1000px; display:none;";
-        styles = ['font-size', 'font-style', 'font-weight', 'font-family', 'line-height', 'text-transform', 'letter-spacing'];
-        for (_i = 0, _len = styles.length; _i < _len; _i++) {
-          style = styles[_i];
-          style_block += style + ":" + this.search_field.css(style) + ";";
-        }
-        div = $('<div />', {
-          'style': style_block
-        });
-        div.text(this.search_field.val());
-        $('body').append(div);
-        w = div.width() + 25;
-        div.remove();
-        if (w > this.f_width - 10) {
-          w = this.f_width - 10;
-        }
-        this.search_field.css({
-          'width': w + 'px'
-        });
-        dd_top = this.container.height();
-        return this.dropdown.css({
-          "top": dd_top + "px"
-        });
-      }
-    };
-    Chosen.prototype.generate_field_id = function() {
+    ChosenBase.prototype.search_field_scale = function() {};
+    ChosenBase.prototype.generate_field_id = function() {
       var new_id;
       new_id = this.generate_random_id();
       this.form_field.id = new_id;
       return new_id;
     };
-    Chosen.prototype.generate_random_id = function() {
+    ChosenBase.prototype.generate_random_id = function() {
       var string;
       string = "sel" + this.generate_random_char() + this.generate_random_char() + this.generate_random_char();
       while ($("#" + string).length > 0) {
@@ -729,12 +657,135 @@
       }
       return string;
     };
-    Chosen.prototype.generate_random_char = function() {
+    ChosenBase.prototype.generate_random_char = function() {
       var chars, newchar, rand;
       chars = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXTZ";
       rand = Math.floor(Math.random() * chars.length);
       return newchar = chars.substring(rand, rand + 1);
     };
+    return ChosenBase;
+  })();
+  ChosenSingle = (function() {
+    __extends(ChosenSingle, ChosenBase);
+    function ChosenSingle() {
+      this.select_changed = __bind(this.select_changed, this);
+      ChosenSingle.__super__.constructor.apply(this, arguments);
+    }
+    ChosenSingle.prototype.is_multiple = false;
+    ChosenSingle.prototype.container_div_content = function() {
+      return "<a href=\"javascript:void(0)\" class=\"chzn-single\">\n  <span>" + (this.default_text()) + "</span>\n  <div><b></b></div>\n</a>\n<div class=\"chzn-drop\" style=\"left:-9000px;\">\n  <div class=\"chzn-search\">\n    <input type=\"text\" autocomplete=\"off\" />\n  </div>\n  <ul class=\"chzn-results\"></ul>\n</div>";
+    };
+    ChosenSingle.prototype.initialize_search_container = function() {
+      var dd_width, sf_width;
+      this.search_container = this.container.find('div.chzn-search').first();
+      this.selected_item = this.container.find('.chzn-single').first();
+      dd_width = this.f_width - get_side_border_padding(this.dropdown);
+      sf_width = dd_width - get_side_border_padding(this.search_container) - get_side_border_padding(this.search_field);
+      return this.search_field.css({
+        "width": sf_width + "px"
+      });
+    };
+    ChosenSingle.prototype.register_observers = function() {
+      ChosenSingle.__super__.register_observers.apply(this, arguments);
+      this.selected_item.focus(this.activate_field);
+      return this.$form_field.change(this.select_changed);
+    };
+    ChosenSingle.prototype.select_changed = function(evt) {
+      return this.select_item(this.form_field.selectedIndex);
+    };
+    ChosenSingle.prototype.set_up_html = function() {
+      ChosenSingle.__super__.set_up_html.apply(this, arguments);
+      return this.container.addClass("chzn-container-single");
+    };
+    ChosenSingle.prototype.update_selected_tab_index = function(ti) {
+      this.selected_item.attr("tabindex", ti);
+      return this.search_field.attr("tabindex", -1);
+    };
+    ChosenSingle.prototype.results_show = function() {
+      this.selected_item.addClass("chzn-single-with-drop");
+      if (this.result_single_selected) {
+        this.result_do_highlight(this.result_single_selected);
+      }
+      return ChosenSingle.__super__.results_show.apply(this, arguments);
+    };
+    ChosenSingle.prototype.show_search_field_default = function() {
+      this.search_field.val("");
+      return this.search_field.removeClass("default");
+    };
+    return ChosenSingle;
+  })();
+  ChosenMultiple = (function() {
+    __extends(ChosenMultiple, ChosenBase);
+    function ChosenMultiple() {
+      ChosenMultiple.__super__.constructor.apply(this, arguments);
+    }
+    ChosenMultiple.prototype.is_multiple = true;
+    ChosenMultiple.prototype.container_div_content = function() {
+      return "<ul class=\"chzn-choices\">\n  <li class=\"search-field\">\n    <input type=\"text\" value=\"" + (this.default_text()) + "\" class=\"default\" autocomplete=\"off\" style=\"width:25px;\" />\n  </li>\n</ul>\n<div class=\"chzn-drop\" style=\"left:-9000px;\">\n  <ul class=\"chzn-results\"></ul>\n</div>";
+    };
+    ChosenMultiple.prototype.initialize_search_container = function() {
+      this.search_choices = this.container.find('ul.chzn-choices').first();
+      return this.search_container = this.container.find('li.search-field').first();
+    };
+    ChosenMultiple.prototype.register_observers = function() {
+      ChosenMultiple.__super__.register_observers.apply(this, arguments);
+      this.search_choices.click(this.choices_click);
+      return this.search_field.focus(this.input_focus);
+    };
+    ChosenMultiple.prototype.set_up_html = function() {
+      ChosenMultiple.__super__.set_up_html.apply(this, arguments);
+      return this.container.addClass("chzn-container-multi");
+    };
+    ChosenMultiple.prototype.update_selected_tab_index = function(ti) {
+      return this.search_field.attr("tabindex", ti);
+    };
+    ChosenMultiple.prototype.show_search_field_default = function() {
+      if (this.choices < 1 && !this.active_field) {
+        this.search_field.val(this.default_text());
+        return this.search_field.addClass("default");
+      } else {
+        this.search_field.val("");
+        return this.search_field.removeClass("default");
+      }
+    };
+    ChosenMultiple.prototype.search_field_scale = function() {
+      var dd_top, div, h, style, style_block, styles, w, _i, _len;
+      h = 0;
+      w = 0;
+      style_block = "position:absolute; left: -1000px; top: -1000px; display:none;";
+      styles = ['font-size', 'font-style', 'font-weight', 'font-family', 'line-height', 'text-transform', 'letter-spacing'];
+      for (_i = 0, _len = styles.length; _i < _len; _i++) {
+        style = styles[_i];
+        style_block += style + ":" + this.search_field.css(style) + ";";
+      }
+      div = $('<div />', {
+        'style': style_block
+      });
+      div.text(this.search_field.val());
+      $('body').append(div);
+      w = div.width() + 25;
+      div.remove();
+      if (w > this.f_width - 10) {
+        w = this.f_width - 10;
+      }
+      this.search_field.css({
+        'width': w + 'px'
+      });
+      dd_top = this.container.height();
+      return this.dropdown.css({
+        "top": dd_top + "px"
+      });
+    };
+    return ChosenMultiple;
+  })();
+  Chosen = (function() {
+    function Chosen(element) {
+      if (element.multiple) {
+        return new ChosenMultiple(element);
+      } else {
+        return new ChosenSingle(element);
+      }
+    }
     return Chosen;
   })();
   get_side_border_padding = function(elmt) {
