@@ -61,19 +61,19 @@ class ChosenBase
   build_container_div: ->
     container_div = ($ "<div />", {
       id: @container_id()
-      class: "chzn-container #{@additional_container_classes}"
+      class: "chzn-container #{@additional_container_classes()}"
       style: "width: #{@f_width}px"
     })
 
     container_div.html @container_div_content()
 
   set_up_html: ->
-    
     @f_width = @$form_field.width()
 
     @$form_field.hide().after @build_container_div()
     @container = ($ '#' + @container_id())
     @dropdown = @container.find('div.chzn-drop').first()
+    @set_container_class()
     
     dd_top = @container.height()
     dd_width = (@f_width - get_side_border_padding(@dropdown))
@@ -578,7 +578,7 @@ class ChosenSingle extends ChosenBase
       </a>
       <div class="chzn-drop" style="left:-9000px;">
         <div class="chzn-search">
-          <input type="text" autocomplete="off" />
+          <input id="foo" type="text" autocomplete="off" />
         </div>
         <ul class="chzn-results"></ul>
       </div>
@@ -599,8 +599,7 @@ class ChosenSingle extends ChosenBase
   select_changed: (evt) =>
     @select_item(@form_field.selectedIndex)
 
-  set_up_html: ->
-    super
+  set_container_class: ->
     @container.addClass "chzn-container-single"
 
   update_selected_tab_index: (ti) ->
@@ -642,8 +641,7 @@ class ChosenMultiple extends ChosenBase
     @search_choices.click @choices_click
     @search_field.focus @input_focus
 
-  set_up_html: ->
-    super
+  set_container_class: ->
     @container.addClass "chzn-container-multi"
 
   update_selected_tab_index: (ti) ->

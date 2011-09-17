@@ -92,7 +92,7 @@
       var container_div;
       container_div = $("<div />", {
         id: this.container_id(),
-        "class": "chzn-container " + this.additional_container_classes,
+        "class": "chzn-container " + (this.additional_container_classes()),
         style: "width: " + this.f_width + "px"
       });
       return container_div.html(this.container_div_content());
@@ -103,6 +103,7 @@
       this.$form_field.hide().after(this.build_container_div());
       this.container = $('#' + this.container_id());
       this.dropdown = this.container.find('div.chzn-drop').first();
+      this.set_container_class();
       dd_top = this.container.height();
       dd_width = this.f_width - get_side_border_padding(this.dropdown);
       this.dropdown.css({
@@ -673,7 +674,7 @@
     }
     ChosenSingle.prototype.is_multiple = false;
     ChosenSingle.prototype.container_div_content = function() {
-      return "<a href=\"javascript:void(0)\" class=\"chzn-single\">\n  <span>" + (this.default_text()) + "</span>\n  <div><b></b></div>\n</a>\n<div class=\"chzn-drop\" style=\"left:-9000px;\">\n  <div class=\"chzn-search\">\n    <input type=\"text\" autocomplete=\"off\" />\n  </div>\n  <ul class=\"chzn-results\"></ul>\n</div>";
+      return "<a href=\"javascript:void(0)\" class=\"chzn-single\">\n  <span>" + (this.default_text()) + "</span>\n  <div><b></b></div>\n</a>\n<div class=\"chzn-drop\" style=\"left:-9000px;\">\n  <div class=\"chzn-search\">\n    <input id=\"foo\" type=\"text\" autocomplete=\"off\" />\n  </div>\n  <ul class=\"chzn-results\"></ul>\n</div>";
     };
     ChosenSingle.prototype.initialize_search_container = function() {
       var dd_width, sf_width;
@@ -693,8 +694,7 @@
     ChosenSingle.prototype.select_changed = function(evt) {
       return this.select_item(this.form_field.selectedIndex);
     };
-    ChosenSingle.prototype.set_up_html = function() {
-      ChosenSingle.__super__.set_up_html.apply(this, arguments);
+    ChosenSingle.prototype.set_container_class = function() {
       return this.container.addClass("chzn-container-single");
     };
     ChosenSingle.prototype.update_selected_tab_index = function(ti) {
@@ -732,8 +732,7 @@
       this.search_choices.click(this.choices_click);
       return this.search_field.focus(this.input_focus);
     };
-    ChosenMultiple.prototype.set_up_html = function() {
-      ChosenMultiple.__super__.set_up_html.apply(this, arguments);
+    ChosenMultiple.prototype.set_container_class = function() {
       return this.container.addClass("chzn-container-multi");
     };
     ChosenMultiple.prototype.update_selected_tab_index = function(ti) {
