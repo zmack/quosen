@@ -98,18 +98,11 @@
       return container_div.html(this.container_div_content());
     };
     ChosenBase.prototype.set_up_html = function() {
-      var dd_top, dd_width;
       this.f_width = this.$form_field.width();
       this.$form_field.hide().after(this.build_container_div());
       this.container = $('#' + this.container_id());
       this.dropdown = this.container.find('div.chzn-drop').first();
       this.set_container_class();
-      dd_top = this.container.height();
-      dd_width = this.f_width - get_side_border_padding(this.dropdown);
-      this.dropdown.css({
-        "width": dd_width + "px",
-        "top": dd_top + "px"
-      });
       this.search_field = this.container.find('input').first();
       this.search_results = this.container.find('ul.chzn-results').first();
       this.search_field_scale();
@@ -316,13 +309,24 @@
       this.search_field.val(this.search_field.val());
       return this.winnow_results();
     };
+    ChosenBase.prototype.update_search_field_width = function() {
+      return this.search_field.css({
+        width: this.search_field_width() + "px"
+      });
+    };
+    ChosenBase.prototype.update_dropdown_width = function() {
+      return this.dropdown.css({
+        width: this.dropdown_width() + "px",
+        top: this.dropdown_top() + "px"
+      });
+    };
     ChosenBase.prototype.results_hide = function() {
       if (!this.is_multiple) {
         this.selected_item.removeClass("chzn-single-with-drop");
       }
       this.result_clear_highlight();
       this.dropdown.css({
-        "left": "-9000px"
+        left: "-9000px"
       });
       return this.results_showing = false;
     };
@@ -670,17 +674,20 @@
     }
     ChosenSingle.prototype.is_multiple = false;
     ChosenSingle.prototype.container_div_content = function() {
-      return "<a href=\"javascript:void(0)\" class=\"chzn-single\">\n  <span>" + (this.default_text()) + "</span>\n  <div><b></b></div>\n</a>\n<div class=\"chzn-drop\" style=\"left:-9000px;\">\n  <div class=\"chzn-search\">\n    <input id=\"foo\" type=\"text\" autocomplete=\"off\" />\n  </div>\n  <ul class=\"chzn-results\"></ul>\n</div>";
+      return "<a href=\"javascript:void(0)\" class=\"chzn-single\">\n  <span>" + (this.default_text()) + "</span>\n  <div><b></b></div>\n</a>\n<div class=\"chzn-drop\" style=\"left:-9000px;\">\n  <div class=\"chzn-search\">\n    <input type=\"text\" autocomplete=\"off\" />\n  </div>\n  <ul class=\"chzn-results\"></ul>\n</div>";
     };
     ChosenSingle.prototype.initialize_search_container = function() {
-      var dd_width, sf_width;
       this.search_container = this.container.find('div.chzn-search').first();
-      this.selected_item = this.container.find('.chzn-single').first();
-      dd_width = this.f_width - get_side_border_padding(this.dropdown);
-      sf_width = dd_width - get_side_border_padding(this.search_container) - get_side_border_padding(this.search_field);
-      return this.search_field.css({
-        "width": sf_width + "px"
-      });
+      return this.selected_item = this.container.find('.chzn-single').first();
+    };
+    ChosenSingle.prototype.dropdown_top = function() {
+      return this.container.height();
+    };
+    ChosenSingle.prototype.dropdown_width = function() {
+      return this.f_width - get_side_border_padding(this.dropdown);
+    };
+    ChosenSingle.prototype.search_field_width = function() {
+      return this.dropdown_width() - get_side_border_padding(this.search_container) - get_side_border_padding(this.search_field);
     };
     ChosenSingle.prototype.register_observers = function() {
       ChosenSingle.__super__.register_observers.apply(this, arguments);
@@ -702,7 +709,8 @@
       if (this.result_single_selected) {
         this.result_do_highlight(this.result_single_selected);
       }
-      return ChosenSingle.__super__.results_show.apply(this, arguments);
+      ChosenSingle.__super__.results_show.apply(this, arguments);
+      return this.update_search_field_width();
     };
     ChosenSingle.prototype.show_search_field_default = function() {
       this.search_field.val("");
@@ -764,11 +772,11 @@
         w = this.f_width - 10;
       }
       this.search_field.css({
-        'width': w + 'px'
+        width: w + 'px'
       });
       dd_top = this.container.height();
       return this.dropdown.css({
-        "top": dd_top + "px"
+        top: dd_top + "px"
       });
     };
     return ChosenMultiple;
@@ -784,8 +792,7 @@
     return Chosen;
   })();
   get_side_border_padding = function(elmt) {
-    var side_border_padding;
-    return side_border_padding = elmt.outerWidth() - elmt.width();
+    return elmt.outerWidth() - elmt.width();
   };
   root.get_side_border_padding = get_side_border_padding;
 }).call(this);

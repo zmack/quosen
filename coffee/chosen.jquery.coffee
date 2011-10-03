@@ -75,11 +75,6 @@ class ChosenBase
     @dropdown = @container.find('div.chzn-drop').first()
     @set_container_class()
     
-    dd_top = @container.height()
-    dd_width = (@f_width - get_side_border_padding(@dropdown))
-    
-    @dropdown.css({"width": dd_width  + "px", "top": dd_top + "px"})
-
     @search_field = @container.find('input').first()
     @search_results = @container.find('ul.chzn-results').first()
     @search_field_scale()
@@ -275,10 +270,19 @@ class ChosenBase
 
     @winnow_results()
 
+  update_search_field_width: ->
+    @search_field.css width: @search_field_width() + "px"
+
+  update_dropdown_width: ->
+    @dropdown.css
+      width: @dropdown_width() + "px"
+      top: @dropdown_top() + "px"
+
+
   results_hide: ->
     @selected_item.removeClass "chzn-single-with-drop" unless @is_multiple
     @result_clear_highlight()
-    @dropdown.css {"left":"-9000px"}
+    @dropdown.css left: "-9000px"
     @results_showing = false
 
 
@@ -578,7 +582,7 @@ class ChosenSingle extends ChosenBase
       </a>
       <div class="chzn-drop" style="left:-9000px;">
         <div class="chzn-search">
-          <input id="foo" type="text" autocomplete="off" />
+          <input type="text" autocomplete="off" />
         </div>
         <ul class="chzn-results"></ul>
       </div>
@@ -587,9 +591,15 @@ class ChosenSingle extends ChosenBase
   initialize_search_container: ->
     @search_container = @container.find('div.chzn-search').first()
     @selected_item = @container.find('.chzn-single').first()
-    dd_width = (@f_width - get_side_border_padding(@dropdown))
-    sf_width = dd_width - get_side_border_padding(@search_container) - get_side_border_padding(@search_field)
-    @search_field.css( {"width" : sf_width + "px"} )
+
+  dropdown_top: ->
+    @container.height()
+
+  dropdown_width: ->
+    @f_width - get_side_border_padding(@dropdown)
+
+  search_field_width: ->
+    @dropdown_width() - get_side_border_padding(@search_container) - get_side_border_padding(@search_field)
 
   register_observers: ->
     super
@@ -612,6 +622,7 @@ class ChosenSingle extends ChosenBase
       @result_do_highlight( @result_single_selected )
 
     super
+    @update_search_field_width()
 
   show_search_field_default: ->
     @search_field.val("")
@@ -672,13 +683,13 @@ class ChosenMultiple extends ChosenBase
     w = div.width() + 25
     div.remove()
 
-    if( w > @f_width-10 )
+    if( w > @f_width - 10 )
       w = @f_width - 10
 
-    @search_field.css({'width': w + 'px'})
+    @search_field.css width: w + 'px'
 
     dd_top = @container.height()
-    @dropdown.css({"top":  dd_top + "px"})
+    @dropdown.css top:  dd_top + "px"
 
 
 class Chosen
@@ -689,6 +700,6 @@ class Chosen
       return new ChosenSingle(element)
 
 get_side_border_padding = (elmt) ->
-  side_border_padding = elmt.outerWidth() - elmt.width()
+  elmt.outerWidth() - elmt.width()
 
 root.get_side_border_padding = get_side_border_padding
