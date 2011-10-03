@@ -166,17 +166,13 @@
     };
     ChosenBase.prototype.input_focus = function(evt) {
       if (!this.active_field) {
-        return setTimeout((__bind(function() {
-          return this.container_mousedown();
-        }, this)), 50);
+        return setTimeout(this.container_mousedown, 50);
       }
     };
     ChosenBase.prototype.input_blur = function(evt) {
       if (!this.mouse_on_container) {
         this.active_field = false;
-        return setTimeout((__bind(function() {
-          return this.blur_test();
-        }, this)), 100);
+        return setTimeout(this.blur_test, 100);
       }
     };
     ChosenBase.prototype.blur_test = function(evt) {

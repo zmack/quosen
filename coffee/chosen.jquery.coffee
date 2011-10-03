@@ -45,7 +45,7 @@ class ChosenBase
     @choices = 0
 
   container_id: ->
-    container_id = if @form_field.id.length 
+    container_id = if @form_field.id.length
       @form_field.id.replace(/(:|\.)/g, '_')
     else
       @generate_field_id()
@@ -56,7 +56,7 @@ class ChosenBase
     if @is_rtl
       'chzn-rtl'
     else
-      '' 
+      ''
 
   build_container_div: ->
     container_div = ($ "<div />", {
@@ -136,12 +136,12 @@ class ChosenBase
   mouse_leave: => @mouse_on_container = false
 
   input_focus: (evt) =>
-    setTimeout (=> @container_mousedown()), 50 unless @active_field
+    setTimeout @container_mousedown, 50 unless @active_field
   
   input_blur: (evt) =>
     if not @mouse_on_container
       @active_field = false
-      setTimeout (=> @blur_test()), 100
+      setTimeout @blur_test, 100
 
   blur_test: (evt) =>
     @close_field() if not @active_field and @container.hasClass "chzn-container-active"
@@ -564,7 +564,7 @@ class ChosenBase
     string
     
   generate_random_char: ->
-    chars = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXTZ";
+    chars = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXTZ"
     rand = Math.floor(Math.random() * chars.length)
     newchar = chars.substring rand, rand+1
 
