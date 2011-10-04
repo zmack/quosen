@@ -58,11 +58,10 @@ class ChosenBase
       ''
 
   build_container_div: ->
-    container_div = ($ "<div />", {
+    container_div = $ "<div />",
       id: @container_id()
       class: "chzn-container #{@additional_container_classes()}"
       style: "width: #{@f_width}px"
-    })
 
     container_div.html @container_div_content()
 
@@ -260,7 +259,6 @@ class ChosenBase
       @results_show()
 
   results_show: ->
-    dd_top = if @is_multiple then @container.height() else (@container.height() - 1)
     @results_showing = true
     @update_dropdown_width()
     @dropdown.css
@@ -273,7 +271,8 @@ class ChosenBase
     @winnow_results()
 
   update_search_field_width: ->
-    @search_field.css width: @search_field_width() + "px"
+    @search_field.css
+      width: @search_field_width() + "px"
 
   update_dropdown_width: ->
     @dropdown.css
@@ -306,13 +305,13 @@ class ChosenBase
 
 
   search_results_mouseup: (evt) =>
-    target = if $(evt.target).hasClass "active-result" then $(evt.target) else $(evt.target).parents(".active-result").first()
+    target = get_target_from_event(evt)
     if target.length
       @result_highlight = target
       @result_select(evt)
 
   search_results_mouseover: (evt) =>
-    target = if $(evt.target).hasClass "active-result" then $(evt.target) else $(evt.target).parents(".active-result").first()
+    target = get_target_from_event(evt)
     @result_do_highlight( target ) if target
 
   search_results_mouseout: (evt) =>
@@ -708,6 +707,12 @@ class Chosen
       return new ChosenMultiple(element)
     else
       return new ChosenSingle(element)
+
+get_target_from_event = (evt) ->
+  if $(evt.target).hasClass "active-result"
+    $(evt.target)
+  else
+    $(evt.target).parents(".active-result").first()
 
 get_side_border_padding = (elmt) ->
   elmt.outerWidth() - elmt.width()
