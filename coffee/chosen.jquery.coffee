@@ -67,7 +67,7 @@ class ChosenBase
     container_div.html @container_div_content()
 
   set_up_html: ->
-    @f_width = @$form_field.width()
+    @f_width = @$form_field.outerWidth()
 
     @$form_field.hide().after @build_container_div()
     @container = ($ '#' + @container_id())

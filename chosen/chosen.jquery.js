@@ -98,7 +98,7 @@
       return container_div.html(this.container_div_content());
     };
     ChosenBase.prototype.set_up_html = function() {
-      this.f_width = this.$form_field.width();
+      this.f_width = this.$form_field.outerWidth();
       this.$form_field.hide().after(this.build_container_div());
       this.container = $('#' + this.container_id());
       this.dropdown = this.container.find('div.chzn-drop').first();
@@ -714,8 +714,8 @@
       if (this.result_single_selected) {
         this.result_do_highlight(this.result_single_selected);
       }
-      ChosenSingle.__super__.results_show.apply(this, arguments);
-      return this.update_search_field_width();
+      this.update_search_field_width();
+      return ChosenSingle.__super__.results_show.apply(this, arguments);
     };
     ChosenSingle.prototype.show_search_field_default = function() {
       this.search_field.val("");
