@@ -300,11 +300,12 @@
     ChosenBase.prototype.results_show = function() {
       var dd_top;
       dd_top = this.is_multiple ? this.container.height() : this.container.height() - 1;
-      this.dropdown.css({
-        "top": dd_top + "px",
-        "left": 0
-      });
       this.results_showing = true;
+      this.update_dropdown_width();
+      this.dropdown.css({
+        top: this.dropdown_top(),
+        left: 0
+      });
       this.search_field.focus();
       this.search_field.val(this.search_field.val());
       return this.winnow_results();
@@ -316,9 +317,19 @@
     };
     ChosenBase.prototype.update_dropdown_width = function() {
       return this.dropdown.css({
-        width: this.dropdown_width() + "px",
+        width: this.dropdown_width() + "px"
+      });
+    };
+    ChosenBase.prototype.update_dropdown_position = function() {
+      return this.dropdown.css({
         top: this.dropdown_top() + "px"
       });
+    };
+    ChosenBase.prototype.dropdown_top = function() {
+      return this.container.height();
+    };
+    ChosenBase.prototype.dropdown_width = function() {
+      return this.f_width - get_side_border_padding(this.dropdown);
     };
     ChosenBase.prototype.results_hide = function() {
       if (!this.is_multiple) {
@@ -680,12 +691,6 @@
       this.search_container = this.container.find('div.chzn-search').first();
       return this.selected_item = this.container.find('.chzn-single').first();
     };
-    ChosenSingle.prototype.dropdown_top = function() {
-      return this.container.height();
-    };
-    ChosenSingle.prototype.dropdown_width = function() {
-      return this.f_width - get_side_border_padding(this.dropdown);
-    };
     ChosenSingle.prototype.search_field_width = function() {
       return this.dropdown_width() - get_side_border_padding(this.search_container) - get_side_border_padding(this.search_field);
     };
@@ -715,6 +720,9 @@
     ChosenSingle.prototype.show_search_field_default = function() {
       this.search_field.val("");
       return this.search_field.removeClass("default");
+    };
+    ChosenSingle.prototype.dropdown_top = function() {
+      return this.container.height() - 1;
     };
     return ChosenSingle;
   })();
@@ -752,7 +760,7 @@
       }
     };
     ChosenMultiple.prototype.search_field_scale = function() {
-      var dd_top, div, h, style, style_block, styles, w, _i, _len;
+      var div, h, style, style_block, styles, w, _i, _len;
       h = 0;
       w = 0;
       style_block = "position:absolute; left: -1000px; top: -1000px; display:none;";
@@ -774,9 +782,11 @@
       this.search_field.css({
         width: w + 'px'
       });
-      dd_top = this.container.height();
+      return this.update_dropdown_position();
+    };
+    ChosenMultiple.prototype.update_dropdown_width = function() {
       return this.dropdown.css({
-        top: dd_top + "px"
+        width: this.dropdown_width() + 'px'
       });
     };
     return ChosenMultiple;

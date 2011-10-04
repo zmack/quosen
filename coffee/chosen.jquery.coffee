@@ -4,14 +4,13 @@ Copyright (c) 2011 by Harvest
 root = this
 $ = jQuery
 
-$.fn.extend({
+$.fn.extend
   chosen: (data, options) ->
     # Do no harm and return as soon as possible for unsupported browsers, namely IE6 and IE7
     return this if $.browser.msie and ($.browser.version is "6.0" or  $.browser.version is "7.0")
-    $(this).each((input_field) ->
+
+    $(this).each (input_field) ->
       new Chosen(this, data, options) unless $(this).hasClass "chzn-done"
-    )
-})
 
 
 class ChosenBase
@@ -262,8 +261,11 @@ class ChosenBase
 
   results_show: ->
     dd_top = if @is_multiple then @container.height() else (@container.height() - 1)
-    @dropdown.css {"top":  dd_top + "px", "left":0}
     @results_showing = true
+    @update_dropdown_width()
+    @dropdown.css
+      top: @dropdown_top(),
+      left: 0
 
     @search_field.focus()
     @search_field.val @search_field.val()
@@ -276,7 +278,16 @@ class ChosenBase
   update_dropdown_width: ->
     @dropdown.css
       width: @dropdown_width() + "px"
+
+  update_dropdown_position: ->
+    @dropdown.css
       top: @dropdown_top() + "px"
+
+  dropdown_top: ->
+    @container.height()
+
+  dropdown_width: ->
+    @f_width - get_side_border_padding(@dropdown)
 
 
   results_hide: ->
@@ -592,12 +603,6 @@ class ChosenSingle extends ChosenBase
     @search_container = @container.find('div.chzn-search').first()
     @selected_item = @container.find('.chzn-single').first()
 
-  dropdown_top: ->
-    @container.height()
-
-  dropdown_width: ->
-    @f_width - get_side_border_padding(@dropdown)
-
   search_field_width: ->
     @dropdown_width() - get_side_border_padding(@search_container) - get_side_border_padding(@search_field)
 
@@ -620,13 +625,16 @@ class ChosenSingle extends ChosenBase
     @selected_item.addClass "chzn-single-with-drop"
     if @result_single_selected
       @result_do_highlight( @result_single_selected )
+    @update_search_field_width()
 
     super
-    @update_search_field_width()
 
   show_search_field_default: ->
     @search_field.val("")
     @search_field.removeClass "default"
+
+  dropdown_top: ->
+    @container.height() - 1
 
 
 class ChosenMultiple extends ChosenBase
@@ -688,9 +696,11 @@ class ChosenMultiple extends ChosenBase
 
     @search_field.css width: w + 'px'
 
-    dd_top = @container.height()
-    @dropdown.css top:  dd_top + "px"
+    @update_dropdown_position()
 
+  update_dropdown_width: ->
+    @dropdown.css
+      width: @dropdown_width() + 'px'
 
 class Chosen
   constructor: (element) ->
