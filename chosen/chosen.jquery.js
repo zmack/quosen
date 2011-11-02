@@ -10,6 +10,7 @@
 (function() {
   /*
   Copyright (c) 2011 by Harvest
+  Modified by Andrei Bocan
   */
   var $, Chosen, ChosenBase, ChosenMultiple, ChosenSingle, get_side_border_padding, get_target_from_event, root;
   var __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; }, __hasProp = Object.prototype.hasOwnProperty, __extends = function(child, parent) {
@@ -23,19 +24,19 @@
   root = this;
   $ = jQuery;
   $.fn.extend({
-    chosen: function(data, options) {
+    chosen: function(options) {
       if ($.browser.msie && ($.browser.version === "6.0" || $.browser.version === "7.0")) {
         return this;
       }
       return $(this).each(function(input_field) {
         if (!$(this).hasClass("chzn-done")) {
-          return new Chosen(this, data, options);
+          return new Chosen(this, options);
         }
       });
     }
   });
   ChosenBase = (function() {
-    function ChosenBase(element) {
+    function ChosenBase(element, options) {
       this.keydown_checker = __bind(this.keydown_checker, this);
       this.keyup_checker = __bind(this.keyup_checker, this);
       this.choices_click = __bind(this.choices_click, this);
@@ -51,6 +52,10 @@
       this.mouse_leave = __bind(this.mouse_leave, this);
       this.mouse_enter = __bind(this.mouse_enter, this);
       this.container_mousedown = __bind(this.container_mousedown, this);      this.set_default_values();
+      this.options = $.extend({
+        display_search_box: true
+      }, options);
+      console.log(this.options);
       this.form_field = element;
       this.$form_field = $(this.form_field);
       this.is_rtl = this.$form_field.hasClass("chzn-rtl");
@@ -682,6 +687,15 @@
       ChosenSingle.__super__.constructor.apply(this, arguments);
     }
     ChosenSingle.prototype.is_multiple = false;
+    ChosenSingle.prototype.should_display_search_box = function() {
+      var search_box;
+      search_box = this.options['display_search_box'];
+      if (typeof search_box === 'function') {
+        return search_box(this);
+      } else {
+        return search_box;
+      }
+    };
     ChosenSingle.prototype.container_div_content = function() {
       return "<a href=\"javascript:void(0)\" class=\"chzn-single\">\n  <span>" + (this.default_text()) + "</span>\n  <div><b></b></div>\n</a>\n<div class=\"chzn-drop\" style=\"left:-9000px;\">\n  <div class=\"chzn-search\">\n    <input type=\"text\" autocomplete=\"off\" />\n  </div>\n  <ul class=\"chzn-results\"></ul>\n</div>";
     };
@@ -717,7 +731,10 @@
     };
     ChosenSingle.prototype.show_search_field_default = function() {
       this.search_field.val("");
-      return this.search_field.removeClass("default");
+      this.search_field.removeClass("default");
+      if (!this.should_display_search_box()) {
+        return this.search_field.hide();
+      }
     };
     ChosenSingle.prototype.dropdown_top = function() {
       return this.container.height() - 1;
@@ -790,11 +807,11 @@
     return ChosenMultiple;
   })();
   Chosen = (function() {
-    function Chosen(element) {
+    function Chosen(element, options) {
       if (element.multiple) {
-        return new ChosenMultiple(element);
+        return new ChosenMultiple(element, options);
       } else {
-        return new ChosenSingle(element);
+        return new ChosenSingle(element, options);
       }
     }
     return Chosen;

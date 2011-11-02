@@ -1,23 +1,30 @@
 ###
 Copyright (c) 2011 by Harvest
+Modified by Andrei Bocan
 ###
 root = this
 $ = jQuery
 
 $.fn.extend
-  chosen: (data, options) ->
+  chosen: (options) ->
     # Do no harm and return as soon as possible for unsupported browsers, namely IE6 and IE7
     return this if $.browser.msie and ($.browser.version is "6.0" or  $.browser.version is "7.0")
 
     $(this).each (input_field) ->
-      new Chosen(this, data, options) unless $(this).hasClass "chzn-done"
+      new Chosen(this, options) unless $(this).hasClass "chzn-done"
 
 
 class ChosenBase
 
-  constructor: (element) ->
+  constructor: (element, options) ->
     @set_default_values()
     
+    @options = $.extend({
+      display_search_box: true
+    }, options)
+
+    console.log(@options)
+
     @form_field = element
     @$form_field = $ @form_field
     @is_rtl = @$form_field.hasClass "chzn-rtl"
@@ -584,6 +591,13 @@ class ChosenBase
 
 class ChosenSingle extends ChosenBase
   is_multiple: false
+  should_display_search_box: ->
+    search_box = @options['display_search_box']
+    if typeof search_box == 'function'
+      search_box(this)
+    else
+      search_box
+
   container_div_content: ->
     """
       <a href="javascript:void(0)" class="chzn-single">
@@ -631,6 +645,7 @@ class ChosenSingle extends ChosenBase
   show_search_field_default: ->
     @search_field.val("")
     @search_field.removeClass "default"
+    @search_field.hide() unless @should_display_search_box()
 
   dropdown_top: ->
     @container.height() - 1
@@ -702,11 +717,11 @@ class ChosenMultiple extends ChosenBase
       width: @dropdown_width() + 'px'
 
 class Chosen
-  constructor: (element) ->
+  constructor: (element, options) ->
     if element.multiple
-      return new ChosenMultiple(element)
+      return new ChosenMultiple(element, options)
     else
-      return new ChosenSingle(element)
+      return new ChosenSingle(element, options)
 
 get_target_from_event = (evt) ->
   if $(evt.target).hasClass "active-result"
