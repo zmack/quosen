@@ -18,12 +18,10 @@ class ChosenBase
 
   constructor: (element, options) ->
     @set_default_values()
-    
-    @options = $.extend({
-      display_search_box: true
-    }, options)
 
-    console.log(@options)
+    @options = $.extend({
+      display_search_box: $.fn.chosenDisplaySearch || true
+    }, options)
 
     @form_field = element
     @$form_field = $ @form_field

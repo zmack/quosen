@@ -53,9 +53,8 @@
       this.mouse_enter = __bind(this.mouse_enter, this);
       this.container_mousedown = __bind(this.container_mousedown, this);      this.set_default_values();
       this.options = $.extend({
-        display_search_box: true
+        display_search_box: $.fn.chosenDisplaySearch || true
       }, options);
-      console.log(this.options);
       this.form_field = element;
       this.$form_field = $(this.form_field);
       this.is_rtl = this.$form_field.hasClass("chzn-rtl");
