@@ -17,11 +17,11 @@ $.fn.extend
 class ChosenBase
 
   constructor: (element, options) ->
-    @set_default_values()
-
     @options = $.extend({
       display_search_box: $.fn.chosenDisplaySearch || true
     }, options)
+
+    @set_default_values()
 
     @form_field = element
     @$form_field = $ @form_field
@@ -47,6 +47,7 @@ class ChosenBase
     @result_highlighted = null
     @result_single_selected = null
     @choices = 0
+    @results_none_found = @options.no_results_text || "No results match";
 
   container_id: ->
     container_id = if @form_field.id.length
@@ -99,7 +100,11 @@ class ChosenBase
     @search_results.mouseover @search_results_mouseover
     @search_results.mouseout @search_results_mouseout
 
-    @$form_field.bind "liszt:updated", @results_update_field
+    @$form_field.bind "liszt:updated", =>
+      @results_update_field()
+    
+    @$form_field.bind "liszt:add-new-option-and-select", =>
+      @add_new_option_and_select()
 
     @search_field.blur @input_blur
     @search_field.keyup @keyup_checker
@@ -299,7 +304,16 @@ class ChosenBase
     @result_clear_highlight()
     @dropdown.css left: "-9000px"
     @results_showing = false
-
+  
+  add_new_option_and_select: ->
+    value = @$form_field.attr('data-new-option')
+    new_option = jQuery('<option />')
+    new_option.val(value)
+    new_option.text(value)
+    new_option.appendTo(select)
+    @results_update_field()   
+    @result_highlight = @search_results.find('li:last-child')
+    @result_select({metaKey: true})
 
   set_tab_index: ->
     return unless @$form_field.attr "tabindex"
@@ -461,6 +475,8 @@ class ChosenBase
       @no_results searchText
     else
       @winnow_results_set_highlight()
+    
+    @$form_field.trigger "liszt:results"
 
   winnow_results_clear: ->
     @search_field.val ""
@@ -482,7 +498,7 @@ class ChosenBase
       @result_do_highlight do_high if do_high?
   
   no_results: (terms) ->
-    no_results_html = $('<li class="no-results">No results match "<span></span>"</li>')
+    no_results_html = $("<li class=\"no-results\">#{@results_none_found} \"<span></span>\"</li>")
     no_results_html.find("span").first().html(terms)
 
     @search_results.append no_results_html
