@@ -102,9 +102,6 @@ class ChosenBase
 
     @$form_field.bind "liszt:updated", =>
       @results_update_field()
-    
-    @$form_field.bind "liszt:add-new-option-and-select", =>
-      @add_new_option_and_select()
 
     @search_field.blur @input_blur
     @search_field.keyup @keyup_checker
@@ -305,11 +302,10 @@ class ChosenBase
     @dropdown.css left: "-9000px"
     @results_showing = false
   
-  add_new_option_and_select: ->
-    value = @$form_field.attr('data-new-option')
+  add_new_option_and_select: (text, value) ->
     new_option = jQuery('<option />')
-    new_option.val(value)
-    new_option.text(value)
+    new_option.text(text)
+    new_option.val(value)    
     new_option.appendTo(select)
     @results_update_field()   
     @result_highlight = @search_results.find('li:last-child')
@@ -733,9 +729,11 @@ class ChosenMultiple extends ChosenBase
 class Chosen
   constructor: (element, options) ->
     if element.multiple
-      return new ChosenMultiple(element, options)
+      chosen = new ChosenMultiple(element, options)
     else
-      return new ChosenSingle(element, options)
+      chosen = new ChosenSingle(element, options)
+    $(element).data('chosen', chosen)
+    return chosen
 
 get_target_from_event = (evt) ->
   if $(evt.target).hasClass "active-result"

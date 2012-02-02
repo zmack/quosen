@@ -134,9 +134,6 @@ Modified by Andrei Bocan
       this.$form_field.bind("liszt:updated", function() {
         return _this.results_update_field();
       });
-      this.$form_field.bind("liszt:add-new-option-and-select", function() {
-        return _this.add_new_option_and_select();
-      });
       this.search_field.blur(this.input_blur);
       this.search_field.keyup(this.keyup_checker);
       return this.search_field.keydown(this.keydown_checker);
@@ -371,12 +368,11 @@ Modified by Andrei Bocan
       return this.results_showing = false;
     };
 
-    ChosenBase.prototype.add_new_option_and_select = function() {
-      var new_option, value;
-      value = this.$form_field.attr('data-new-option');
+    ChosenBase.prototype.add_new_option_and_select = function(text, value) {
+      var new_option;
       new_option = jQuery('<option />');
+      new_option.text(text);
       new_option.val(value);
-      new_option.text(value);
       new_option.appendTo(select);
       this.results_update_field();
       this.result_highlight = this.search_results.find('li:last-child');
@@ -891,11 +887,14 @@ Modified by Andrei Bocan
   Chosen = (function() {
 
     function Chosen(element, options) {
+      var chosen;
       if (element.multiple) {
-        return new ChosenMultiple(element, options);
+        chosen = new ChosenMultiple(element, options);
       } else {
-        return new ChosenSingle(element, options);
+        chosen = new ChosenSingle(element, options);
       }
+      $(element).data('chosen', chosen);
+      return chosen;
     }
 
     return Chosen;
