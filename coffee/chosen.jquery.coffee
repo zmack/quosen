@@ -306,7 +306,7 @@ class ChosenBase
     new_option = jQuery('<option />')
     new_option.text(text)
     new_option.val(value)    
-    new_option.appendTo(select)
+    new_option.appendTo(@$form_field)
     @results_update_field()   
     @result_highlight = @search_results.find('li:last-child')
     @result_select({metaKey: true})

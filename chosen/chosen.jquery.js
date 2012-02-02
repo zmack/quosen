@@ -373,7 +373,7 @@ Modified by Andrei Bocan
       new_option = jQuery('<option />');
       new_option.text(text);
       new_option.val(value);
-      new_option.appendTo(select);
+      new_option.appendTo(this.$form_field);
       this.results_update_field();
       this.result_highlight = this.search_results.find('li:last-child');
       return this.result_select({
