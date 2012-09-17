@@ -30,6 +30,7 @@ class ChosenBase
     @set_up_html()
     @register_observers()
     @$form_field.addClass "chzn-done"
+    @update_select_state()
 
   default_text: ->
     return @$form_field.data 'placeholder' if @$form_field.data 'placeholder'
@@ -100,8 +101,7 @@ class ChosenBase
     @search_results.mouseover @search_results_mouseover
     @search_results.mouseout @search_results_mouseout
 
-    @$form_field.bind "liszt:updated", =>
-      @results_update_field()
+    @$form_field.bind "liszt:updated", @results_update_field
 
     @search_field.blur @input_blur
     @search_field.keyup @keyup_checker
@@ -109,6 +109,8 @@ class ChosenBase
 
 
   container_mousedown: (evt) =>
+    return if @disabled
+
     if evt and evt.type is "mousedown"
       evt.stopPropagation()
     if not @pending_destroy_click
@@ -164,6 +166,8 @@ class ChosenBase
     @search_field_scale()
 
   activate_field: =>
+    return if @disabled
+
     if not @is_multiple and not @active_field
       @search_field.attr "tabindex", (@selected_item.attr "tabindex")
       @selected_item.attr "tabindex", -1
@@ -231,10 +235,18 @@ class ChosenBase
     else
       ""
 
-  results_update_field: ->
+  results_update_field: =>
     @result_clear_highlight()
     @result_single_selected = null
     @results_build()
+    @update_select_state()
+
+  update_select_state: =>
+    @disabled = @$form_field.attr('disabled') == 'disabled'
+    if @disabled
+      @container.addClass 'disabled'
+    else
+      @container.removeClass 'disabled'
 
   result_do_highlight: (el) ->
     if el.length
@@ -536,6 +548,8 @@ class ChosenBase
     @pending_backstroke = null
 
   keyup_checker: (evt) =>
+    return if @disabled
+
     stroke = evt.which ? evt.keyCode
     @search_field_scale()
 

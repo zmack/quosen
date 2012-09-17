@@ -13,11 +13,12 @@ Copyright (c) 2011 by Harvest
 Modified by Andrei Bocan
 */
 
+
 (function() {
   var $, Chosen, ChosenBase, ChosenMultiple, ChosenSingle, get_side_border_padding, get_target_from_event, root,
     __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; },
-    __hasProp = Object.prototype.hasOwnProperty,
-    __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor; child.__super__ = parent.prototype; return child; };
+    __hasProp = {}.hasOwnProperty,
+    __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
   root = this;
 
@@ -29,7 +30,9 @@ Modified by Andrei Bocan
         return this;
       }
       return $(this).each(function(input_field) {
-        if (!$(this).hasClass("chzn-done")) return new Chosen(this, options);
+        if (!$(this).hasClass("chzn-done")) {
+          return new Chosen(this, options);
+        }
       });
     }
   });
@@ -38,20 +41,39 @@ Modified by Andrei Bocan
 
     function ChosenBase(element, options) {
       this.keydown_checker = __bind(this.keydown_checker, this);
+
       this.keyup_checker = __bind(this.keyup_checker, this);
+
       this.choices_click = __bind(this.choices_click, this);
+
       this.search_results_mouseout = __bind(this.search_results_mouseout, this);
+
       this.search_results_mouseover = __bind(this.search_results_mouseover, this);
+
       this.search_results_mouseup = __bind(this.search_results_mouseup, this);
+
+      this.update_select_state = __bind(this.update_select_state, this);
+
+      this.results_update_field = __bind(this.results_update_field, this);
+
       this.test_active_click = __bind(this.test_active_click, this);
+
       this.activate_field = __bind(this.activate_field, this);
+
       this.close_field = __bind(this.close_field, this);
+
       this.blur_test = __bind(this.blur_test, this);
+
       this.input_blur = __bind(this.input_blur, this);
+
       this.input_focus = __bind(this.input_focus, this);
+
       this.mouse_leave = __bind(this.mouse_leave, this);
+
       this.mouse_enter = __bind(this.mouse_enter, this);
-      this.container_mousedown = __bind(this.container_mousedown, this);      this.options = $.extend({
+
+      this.container_mousedown = __bind(this.container_mousedown, this);
+      this.options = $.extend({
         display_search_box: $.fn.chosenDisplaySearch || true
       }, options);
       this.set_default_values();
@@ -61,6 +83,7 @@ Modified by Andrei Bocan
       this.set_up_html();
       this.register_observers();
       this.$form_field.addClass("chzn-done");
+      this.update_select_state();
     }
 
     ChosenBase.prototype.default_text = function() {
@@ -124,26 +147,30 @@ Modified by Andrei Bocan
     };
 
     ChosenBase.prototype.register_observers = function() {
-      var _this = this;
       this.container.mousedown(this.container_mousedown);
       this.container.mouseenter(this.mouse_enter);
       this.container.mouseleave(this.mouse_leave);
       this.search_results.mouseup(this.search_results_mouseup);
       this.search_results.mouseover(this.search_results_mouseover);
       this.search_results.mouseout(this.search_results_mouseout);
-      this.$form_field.bind("liszt:updated", function() {
-        return _this.results_update_field();
-      });
+      this.$form_field.bind("liszt:updated", this.results_update_field);
       this.search_field.blur(this.input_blur);
       this.search_field.keyup(this.keyup_checker);
       return this.search_field.keydown(this.keydown_checker);
     };
 
     ChosenBase.prototype.container_mousedown = function(evt) {
-      if (evt && evt.type === "mousedown") evt.stopPropagation();
+      if (this.disabled) {
+        return;
+      }
+      if (evt && evt.type === "mousedown") {
+        evt.stopPropagation();
+      }
       if (!this.pending_destroy_click) {
         if (!this.active_field) {
-          if (this.is_multiple) this.search_field.val("");
+          if (this.is_multiple) {
+            this.search_field.val("");
+          }
           $(document).click(this.test_active_click);
           this.results_show();
         } else if (!this.is_multiple && evt && ($(evt.target) === this.selected_item || $(evt.target).parents("a.chzn-single").length)) {
@@ -174,7 +201,9 @@ Modified by Andrei Bocan
     };
 
     ChosenBase.prototype.input_focus = function(evt) {
-      if (!this.active_field) return setTimeout(this.container_mousedown, 50);
+      if (!this.active_field) {
+        return setTimeout(this.container_mousedown, 50);
+      }
     };
 
     ChosenBase.prototype.input_blur = function(evt) {
@@ -206,6 +235,9 @@ Modified by Andrei Bocan
     };
 
     ChosenBase.prototype.activate_field = function() {
+      if (this.disabled) {
+        return;
+      }
       if (!this.is_multiple && !this.active_field) {
         this.search_field.attr("tabindex", this.selected_item.attr("tabindex"));
         this.selected_item.attr("tabindex", -1);
@@ -273,8 +305,12 @@ Modified by Andrei Bocan
       if (!option.disabled) {
         option.dom_id = this.option_id_for_index(option.array_index);
         classes = option.selected && this.is_multiple ? [] : ["active-result"];
-        if (option.selected) classes.push("result-selected");
-        if (option.group_array_index != null) classes.push("group-option");
+        if (option.selected) {
+          classes.push("result-selected");
+        }
+        if (option.group_array_index != null) {
+          classes.push("group-option");
+        }
         return "<li id=\"" + option.dom_id + "\" class=\"" + (classes.join(' ')) + "\">" + option.html + "</li>";
       } else {
         return "";
@@ -284,7 +320,17 @@ Modified by Andrei Bocan
     ChosenBase.prototype.results_update_field = function() {
       this.result_clear_highlight();
       this.result_single_selected = null;
-      return this.results_build();
+      this.results_build();
+      return this.update_select_state();
+    };
+
+    ChosenBase.prototype.update_select_state = function() {
+      this.disabled = this.$form_field.attr('disabled') === 'disabled';
+      if (this.disabled) {
+        return this.container.addClass('disabled');
+      } else {
+        return this.container.removeClass('disabled');
+      }
     };
 
     ChosenBase.prototype.result_do_highlight = function(el) {
@@ -307,7 +353,9 @@ Modified by Andrei Bocan
     };
 
     ChosenBase.prototype.result_clear_highlight = function() {
-      if (this.result_highlight) this.result_highlight.removeClass("highlighted");
+      if (this.result_highlight) {
+        this.result_highlight.removeClass("highlighted");
+      }
       return this.result_highlight = null;
     };
 
@@ -383,7 +431,9 @@ Modified by Andrei Bocan
 
     ChosenBase.prototype.set_tab_index = function() {
       var ti;
-      if (!this.$form_field.attr("tabindex")) return;
+      if (!this.$form_field.attr("tabindex")) {
+        return;
+      }
       ti = this.$form_field.attr("tabindex");
       this.$form_field.attr("tabindex", -1);
       return this.update_selected_tab_index(ti);
@@ -401,7 +451,9 @@ Modified by Andrei Bocan
     ChosenBase.prototype.search_results_mouseover = function(evt) {
       var target;
       target = get_target_from_event(evt);
-      if (target) return this.result_do_highlight(target);
+      if (target) {
+        return this.result_do_highlight(target);
+      }
     };
 
     ChosenBase.prototype.search_results_mouseout = function(evt) {
@@ -466,7 +518,9 @@ Modified by Andrei Bocan
         } else {
           this.selected_item.find("span").first().text(item.text);
         }
-        if (!(evt.metaKey && this.is_multiple)) this.results_hide();
+        if (!(evt.metaKey && this.is_multiple)) {
+          this.results_hide();
+        }
         this.search_field.val("");
         this.$form_field.trigger("change");
         return this.search_field_scale();
@@ -503,7 +557,7 @@ Modified by Andrei Bocan
     };
 
     ChosenBase.prototype.winnow_results = function() {
-      var found, option, part, parts, regex, result_id, results, searchText, startpos, text, _i, _j, _len, _len2, _ref;
+      var found, option, part, parts, regex, result_id, results, searchText, startpos, text, _i, _j, _len, _len1, _ref;
       this.no_results_clear();
       results = 0;
       searchText = this.search_field.val() === this.default_text() ? "" : $('<div/>').text($.trim(this.search_field.val())).html();
@@ -523,7 +577,7 @@ Modified by Andrei Bocan
             } else if (option.html.indexOf(" ") >= 0 || option.html.indexOf("[") === 0) {
               parts = option.html.replace(/\[|\]/g, "").split(" ");
               if (parts.length) {
-                for (_j = 0, _len2 = parts.length; _j < _len2; _j++) {
+                for (_j = 0, _len1 = parts.length; _j < _len1; _j++) {
                   part = parts[_j];
                   if (regex.test(part)) {
                     found = true;
@@ -540,7 +594,9 @@ Modified by Andrei Bocan
               } else {
                 text = option.html;
               }
-              if ($("#" + result_id).html !== text) $("#" + result_id).html(text);
+              if ($("#" + result_id).html !== text) {
+                $("#" + result_id).html(text);
+              }
               this.result_activate($("#" + result_id));
               if (option.group_array_index != null) {
                 $("#" + this.results_data[option.group_array_index].dom_id).show();
@@ -586,7 +642,9 @@ Modified by Andrei Bocan
       if (!this.result_highlight) {
         selected_results = !this.is_multiple ? this.search_results.find(".result-selected") : [];
         do_high = selected_results.length ? selected_results.first() : this.search_results.find(".active-result").first();
-        if (do_high != null) return this.result_do_highlight(do_high);
+        if (do_high != null) {
+          return this.result_do_highlight(do_high);
+        }
       }
     };
 
@@ -605,12 +663,18 @@ Modified by Andrei Bocan
       var first_active, next_sib;
       if (!this.result_highlight) {
         first_active = this.search_results.find("li.active-result").first();
-        if (first_active) this.result_do_highlight($(first_active));
+        if (first_active) {
+          this.result_do_highlight($(first_active));
+        }
       } else if (this.results_showing) {
         next_sib = this.result_highlight.nextAll("li.active-result").first();
-        if (next_sib) this.result_do_highlight(next_sib);
+        if (next_sib) {
+          this.result_do_highlight(next_sib);
+        }
       }
-      if (!this.results_showing) return this.results_show();
+      if (!this.results_showing) {
+        return this.results_show();
+      }
     };
 
     ChosenBase.prototype.keyup_arrow = function() {
@@ -622,7 +686,9 @@ Modified by Andrei Bocan
         if (prev_sibs.length) {
           return this.result_do_highlight(prev_sibs.first());
         } else {
-          if (this.choices > 0) this.results_hide();
+          if (this.choices > 0) {
+            this.results_hide();
+          }
           return this.result_clear_highlight();
         }
       }
@@ -647,6 +713,9 @@ Modified by Andrei Bocan
 
     ChosenBase.prototype.keyup_checker = function(evt) {
       var stroke, _ref;
+      if (this.disabled) {
+        return;
+      }
       stroke = (_ref = evt.which) != null ? _ref : evt.keyCode;
       this.search_field_scale();
       switch (stroke) {
@@ -660,10 +729,14 @@ Modified by Andrei Bocan
           break;
         case 13:
           evt.preventDefault();
-          if (this.results_showing) return this.result_select(evt);
+          if (this.results_showing) {
+            return this.result_select(evt);
+          }
           break;
         case 27:
-          if (this.results_showing) return this.results_hide();
+          if (this.results_showing) {
+            return this.results_hide();
+          }
           break;
         case 9:
         case 38:
@@ -681,7 +754,9 @@ Modified by Andrei Bocan
       var stroke, _ref;
       stroke = (_ref = evt.which) != null ? _ref : evt.keyCode;
       this.search_field_scale();
-      if (stroke !== 8 && this.pending_backstroke) this.clear_backstroke();
+      if (stroke !== 8 && this.pending_backstroke) {
+        this.clear_backstroke();
+      }
       switch (stroke) {
         case 8:
           this.backstroke_length = this.search_field.val().length;
@@ -737,7 +812,7 @@ Modified by Andrei Bocan
 
     function ChosenSingle() {
       this.select_changed = __bind(this.select_changed, this);
-      ChosenSingle.__super__.constructor.apply(this, arguments);
+      return ChosenSingle.__super__.constructor.apply(this, arguments);
     }
 
     ChosenSingle.prototype.is_multiple = false;
@@ -796,7 +871,9 @@ Modified by Andrei Bocan
     ChosenSingle.prototype.show_search_field_default = function() {
       this.search_field.val("");
       this.search_field.removeClass("default");
-      if (!this.should_display_search_box()) return this.search_field.hide();
+      if (!this.should_display_search_box()) {
+        return this.search_field.hide();
+      }
     };
 
     ChosenSingle.prototype.dropdown_top = function() {
@@ -812,7 +889,7 @@ Modified by Andrei Bocan
     __extends(ChosenMultiple, _super);
 
     function ChosenMultiple() {
-      ChosenMultiple.__super__.constructor.apply(this, arguments);
+      return ChosenMultiple.__super__.constructor.apply(this, arguments);
     }
 
     ChosenMultiple.prototype.is_multiple = true;
@@ -867,7 +944,9 @@ Modified by Andrei Bocan
       $('body').append(div);
       w = div.width() + 25;
       div.remove();
-      if (w > this.f_width - 10) w = this.f_width - 10;
+      if (w > this.f_width - 10) {
+        w = this.f_width - 10;
+      }
       this.search_field.css({
         width: w + 'px'
       });
@@ -956,7 +1035,9 @@ Modified by Andrei Bocan
     SelectParser.prototype.add_option = function(option, group_position, group_disabled) {
       if (option.nodeName === "OPTION") {
         if (option.text !== "") {
-          if (group_position != null) this.parsed[group_position].children += 1;
+          if (group_position != null) {
+            this.parsed[group_position].children += 1;
+          }
           this.parsed.push({
             array_index: this.parsed.length,
             options_index: this.options_index,
