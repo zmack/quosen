@@ -104,7 +104,8 @@ Modified by Andrei Bocan
       this.result_highlighted = null;
       this.result_single_selected = null;
       this.choices = 0;
-      return this.results_none_found = this.options.no_results_text || "No results match";
+      this.results_none_found = this.options.no_results_text || "No results match";
+      return this.max_selected_options = this.options.max_selected_options || Infinity;
     };
 
     ChosenBase.prototype.container_id = function() {
@@ -500,6 +501,14 @@ Modified by Andrei Bocan
     ChosenBase.prototype.result_select = function(evt) {
       var high, high_id, item, position;
       if (this.result_highlight) {
+        if (this.is_multiple && this.choices >= this.max_selected_options) {
+          this.search_field.val("");
+          this.$form_field.trigger("liszt:maxselected", {
+            chosen: this
+          });
+          this.results_hide();
+          return;
+        }
         high = this.result_highlight;
         high_id = high.attr("id");
         this.result_clear_highlight();
