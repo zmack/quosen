@@ -49,6 +49,7 @@ class ChosenBase
     @result_single_selected = null
     @choices = 0
     @results_none_found = @options.no_results_text || "No results match";
+    @max_selected_options = @options.max_selected_options || Infinity;
 
   container_id: ->
     container_id = if @form_field.id.length
@@ -378,6 +379,14 @@ class ChosenBase
 
   result_select: (evt) ->
     if @result_highlight
+      if @is_multiple && @choices >= @max_selected_options
+        @search_field.val("")
+        @$form_field.trigger("liszt:maxselected", {chosen: this})
+        @results_hide()
+        return
+
+    
+
       high = @result_highlight
       high_id = high.attr "id"
       
